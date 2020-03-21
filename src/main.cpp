@@ -1,18 +1,5 @@
 #include <Arduino.h>
 
-//B
-// const int pinLed = D1;
-// void setup()
-// {
-//   digitalWrite(LED_BUILTIN, true);
-//   pinMode(pinLed, OUTPUT);
-//   digitalWrite(pinLed, true);
-// }
-// void loop()
-// {
-//   delay(100);
-// }
-
 #include <WiFiServerBasics.h>
 ESP8266WebServer server(80);
 
@@ -216,6 +203,10 @@ void handleAction()
   }
   if (cmd == "upCh" || cmd == "downCh")
   {
+    //todo sta se sa ovim desava? da li se ovaj kôd uopste izvrsava ili se sve desava u JavaScriptu?
+    Serial.print(cmd);
+    Serial.print(": ");
+    Serial.println(idxCurrentChannel);
     if (justSelectedChannels) // selected prikaz
     {
       byte dx = cmd == "upCh" ? +1 : -1;
@@ -270,26 +261,136 @@ void handleAction()
   server.send(200, "application/json", "{}");
 }
 
+// Fajl u koji se privremeno upisuje koji .csv fajl treba update-ovati sa kingtrader.info/php/
+const String UPDATE_INI = "/dat/update.ini";
+
+// /updateCSV?fileName=tags.csv
+void handleUpdateCSV()
+{
+  String fileName = server.arg("fileName");
+  Serial.println(fileName);
+  File fp = SPIFFS.open(UPDATE_INI, "w");
+  if (fp)
+  {
+    fp.print(fileName);
+    fp.close();
+  }
+  else
+    Serial.println(UPDATE_INI + " open (w) faaail.");
+  delay(50);
+  ESP.reset();
+
+  server.send(200, "text/plain", "");
+}
+
 void setup()
 {
   Serial.begin(115200);
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, true);
 
+  SPIFFS.begin();
+  {
+    File fp = SPIFFS.open("/dat/tags.csv", "r");
+    Serial.println("csv 1");
+    Serial.println(fp.readString());
+    fp.close();
+  }
   ConnectToWiFi();
+
+  if (SPIFFS.exists(UPDATE_INI))
+  {
+    Serial.println(UPDATE_INI + " postoji");
+    const char *host = "kingtrader.info";
+    WiFiClient client;
+    if (!client.connect(host, 80))
+    {
+      Serial.println("connection failed");
+      delay(5000);
+      // return;
+    }
+
+    String csvFileName;
+    // This will send a string to the server
+    Serial.println("sending data to server");
+    if (client.connected())
+    {
+      File fp = SPIFFS.open(UPDATE_INI, "r");
+      String s = "";
+      if (fp)
+      {
+        csvFileName = fp.readString();
+        fp.close();
+      }
+      else
+      {
+        Serial.println(UPDATE_INI + " open (r) faaail.");
+        // return;
+      }
+
+      client.print(String("GET /php/") + csvFileName + " HTTP/1.1\r\n" +
+                   "Host: " + host + "\r\n" +
+                   "Connection: close\r\n\r\n");
+      delay(10);
+    }
+
+    // wait for data to be available
+    unsigned long timeout = millis();
+    while (client.available() == 0)
+      if (millis() - timeout > 5000)
+      {
+        Serial.println(">>> Client Timeout !");
+        client.stop();
+        delay(6000);
+        // return;
+        break;
+      }
+
+    // Read all the lines of the reply from server and print them to Serial
+    Serial.println("receiving from remote server");
+    
+    String line;
+    bool writeToFile = false;
+    File fp = SPIFFS.open(String("/dat/") + csvFileName, "w");
+    while (client.available())
+    {
+      line = client.readStringUntil('\n');
+      line.trim();
+      if (writeToFile)
+        fp.println(line);
+      if (line.length() == 0)
+        writeToFile = true;
+    }
+    fp.close();
+
+    // Close the connection
+    Serial.println("closing connection");
+    client.stop();
+    SPIFFS.remove(UPDATE_INI);
+  }
+  else
+    Serial.println(UPDATE_INI + " NE postoji");
+
+  {
+    File fp = SPIFFS.open("/dat/tags.csv", "r");
+    Serial.println("csv 2");
+    Serial.println(fp.readString());
+    fp.close();
+  }
+
   SetupIPAddress(20);
   server.on("/act", handleAction);
   server.on("/test", handleTest);
   server.on("/getChannels", handleGetChannels);
   server.on("/getTags", handleGetTags);
   server.on("/setTags", handleSetTags);
+  server.on("/updateCSV", handleUpdateCSV);
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
   server.on("/inc/blue_remote_512.png", []() { HandleDataFile(server, "/inc/blue_remote_512.png", "image/png"); });
   server.begin();
   Serial.println("HTTP server started");
-  SPIFFS.begin();
   initChannels();
   irsend.begin();
 }
@@ -297,4 +398,5 @@ void setup()
 void loop()
 {
   server.handleClient();
+  delay(10);
 }
