@@ -7,7 +7,9 @@ ESP8266WebServer server(80);
 #include <IRsend.h>
 IRsend irsend(D2);
 
-#include "Tags.h"
+#include "UpdateCSV.h"
+#include "Channel.h"
+#include <SpiffsUtils.h>
 #include "FS.h"
 
 const byte pinLed = LED_BUILTIN;
@@ -18,42 +20,6 @@ int cntChannels;               // broj TV kanala koji se pamte u nizu channels
 int idxCurrentChannel = -1;
 bool justSelectedChannels = false;
 
-const char sepProps = '|'; // separator za razdvajanje svojstava u objektu
-
-struct Channel
-{
-  String name;  // naziv kanala
-  short number; // broj kanala na TVu
-  bool spin;    // false(0) ako je prvi od dva kanala na istom broju, true(1) je drugi
-  bool isSelected;
-  String tags;
-
-  Channel() {}
-
-  void init(String name, short number, bool spin = false)
-  {
-    this->name = name;
-    this->number = number;
-    this->spin = spin;
-  }
-
-  String toString()
-  {
-    String s = name;
-    s.concat(sepProps);
-    s.concat(number);
-    s.concat(sepProps);
-    s.concat(spin);
-    s.concat(sepProps);
-    s.concat(isSelected);
-    if (tags != "") // ako kanal ima tagove - dodaj ih u string
-    {
-      s.concat(sepProps);
-      s.concat(tags);
-    }
-    return s;
-  }
-};
 Channel *channels;
 
 void initChannels()
@@ -81,7 +47,7 @@ void initChannels()
     {
       String l = fp.readStringUntil('\n');
       l.trim();
-      int idx = l.indexOf(sepProps);
+      int idx = l.indexOf(Channel::SepProps);
       if (idx == -1)
         break;
       String strNumber = l.substring(0, idx);
@@ -113,21 +79,22 @@ void handleGetChannels()
   server.send(200, "text/x-csv", channelsToString());
 }
 
+const String TAGS_INI = "/dat/tags.csv";
+
 void handleGetTags()
 {
-  server.send(200, "text/x-csv", Tags::ReadTagsFile());
+  server.send(200, "text/x-csv", SpiffsUtils::ReadFile(TAGS_INI));
 }
 
 void handleSetTags()
 {
-  Tags::WriteTagsFile(server.arg("plain"));
+  SpiffsUtils::WriteFile(TAGS_INI, server.arg("plain"));
   server.send(200, "text/plain", "");
 }
 
 // test json
 void handleTest()
 {
-  //B char s[] = "{ 'app': 'ESP_IR_TV' }";
   server.send(200, "application/json", "{ 'app': 'ESP_IR_TV' }");
 }
 
@@ -138,7 +105,7 @@ void sendIRcodes(long *codes)
   {
     if (i != 0 && codes[i] == codes[i - 1])
       delay(itvLongDelay);
-    Serial.println(codes[i]);
+    //T Serial.println(codes[i]);
     irsend.sendNEC(codes[i], cntBitsSent);
     delay(itvShortDelay);
   }
@@ -181,7 +148,7 @@ long *IRcodes(short chNumber, bool spin)
 void handleAction()
 {
   String cmd = server.arg("cmd");
-  Serial.println(cmd);
+  //T Serial.println(cmd);
 
   // gornji deo daljinskog
   if (cmd == "onOff")
@@ -254,33 +221,12 @@ void handleAction()
     else // aktiviranje kanala
     {
       int idx = ch.toInt();
+      Serial.println(channels[idx].toString());
       sendIRcodes(IRcodes(channels[idx].number, channels[idx].spin));
     }
   }
 
   server.send(200, "application/json", "{}");
-}
-
-// Fajl u koji se privremeno upisuje koji .csv fajl treba update-ovati sa kingtrader.info/php/
-const String UPDATE_INI = "/dat/update.ini";
-
-// /updateCSV?fileName=tags.csv
-void handleUpdateCSV()
-{
-  String fileName = server.arg("fileName");
-  Serial.println(fileName);
-  File fp = SPIFFS.open(UPDATE_INI, "w");
-  if (fp)
-  {
-    fp.print(fileName);
-    fp.close();
-  }
-  else
-    Serial.println(UPDATE_INI + " open (w) faaail.");
-  delay(50);
-  ESP.reset();
-
-  server.send(200, "text/plain", "");
 }
 
 void setup()
@@ -290,101 +236,15 @@ void setup()
   digitalWrite(pinLed, true);
 
   SPIFFS.begin();
-  {
-    File fp = SPIFFS.open("/dat/tags.csv", "r");
-    Serial.println("csv 1");
-    Serial.println(fp.readString());
-    fp.close();
-  }
   ConnectToWiFi();
-
-  if (SPIFFS.exists(UPDATE_INI))
-  {
-    Serial.println(UPDATE_INI + " postoji");
-    const char *host = "kingtrader.info";
-    WiFiClient client;
-    if (!client.connect(host, 80))
-    {
-      Serial.println("connection failed");
-      delay(5000);
-      // return;
-    }
-
-    String csvFileName;
-    // This will send a string to the server
-    Serial.println("sending data to server");
-    if (client.connected())
-    {
-      File fp = SPIFFS.open(UPDATE_INI, "r");
-      String s = "";
-      if (fp)
-      {
-        csvFileName = fp.readString();
-        fp.close();
-      }
-      else
-      {
-        Serial.println(UPDATE_INI + " open (r) faaail.");
-        // return;
-      }
-
-      client.print(String("GET /php/") + csvFileName + " HTTP/1.1\r\n" +
-                   "Host: " + host + "\r\n" +
-                   "Connection: close\r\n\r\n");
-      delay(10);
-    }
-
-    // wait for data to be available
-    unsigned long timeout = millis();
-    while (client.available() == 0)
-      if (millis() - timeout > 5000)
-      {
-        Serial.println(">>> Client Timeout !");
-        client.stop();
-        delay(6000);
-        // return;
-        break;
-      }
-
-    // Read all the lines of the reply from server and print them to Serial
-    Serial.println("receiving from remote server");
-    
-    String line;
-    bool writeToFile = false;
-    File fp = SPIFFS.open(String("/dat/") + csvFileName, "w");
-    while (client.available())
-    {
-      line = client.readStringUntil('\n');
-      line.trim();
-      if (writeToFile)
-        fp.println(line);
-      if (line.length() == 0)
-        writeToFile = true;
-    }
-    fp.close();
-
-    // Close the connection
-    Serial.println("closing connection");
-    client.stop();
-    SPIFFS.remove(UPDATE_INI);
-  }
-  else
-    Serial.println(UPDATE_INI + " NE postoji");
-
-  {
-    File fp = SPIFFS.open("/dat/tags.csv", "r");
-    Serial.println("csv 2");
-    Serial.println(fp.readString());
-    fp.close();
-  }
-
+  UpdateCSV::DownloadNewCsvIN();
   SetupIPAddress(20);
   server.on("/act", handleAction);
   server.on("/test", handleTest);
   server.on("/getChannels", handleGetChannels);
   server.on("/getTags", handleGetTags);
   server.on("/setTags", handleSetTags);
-  server.on("/updateCSV", handleUpdateCSV);
+  server.on("/updateCSV", []() { UpdateCSV::HandleUpdateCSV(server); });
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
