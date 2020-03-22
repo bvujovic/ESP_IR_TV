@@ -168,23 +168,6 @@ void handleAction()
     delay(itvShortDelay);
     irsend.sendNEC(0x20DFC03F, cntBitsSent);
   }
-  if (cmd == "upCh" || cmd == "downCh")
-  {
-    //todo sta se sa ovim desava? da li se ovaj kôd uopste izvrsava ili se sve desava u JavaScriptu?
-    Serial.print(cmd);
-    Serial.print(": ");
-    Serial.println(idxCurrentChannel);
-    if (justSelectedChannels) // selected prikaz
-    {
-      byte dx = cmd == "upCh" ? +1 : -1;
-    }
-    else // all channels prikaz
-    {
-      idxCurrentChannel += cmd == "upCh" ? +1 : -1;
-      idxCurrentChannel %= cntChannels;
-      sendIRcodes(IRcodes(channels[idxCurrentChannel].number, channels[idxCurrentChannel].spin));
-    }
-  }
 
   // boje
   if (cmd == "colorGreen")
@@ -245,6 +228,7 @@ void setup()
   server.on("/getTags", handleGetTags);
   server.on("/setTags", handleSetTags);
   server.on("/updateCSV", []() { UpdateCSV::HandleUpdateCSV(server); });
+  server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });

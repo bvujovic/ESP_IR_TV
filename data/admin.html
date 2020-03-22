@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>TV ctrl - CSV updates</title>
+    <link rel="icon" href="inc/blue_remote_512.png" type="image/png" />
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link href="inc/style.css" rel="stylesheet" type="text/css">
+    <script onload='getTags(); getChannels();' src="inc/script.js" type="text/javascript"
+        language="JavaScript"></script>
+    <style>
+        * {
+            color: #fff;
+        }
+
+        a {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Channels and Tags updates</h1>
+
+    <a href="/updateCSV?fileName=channels.csv">Update Channels</a>
+    <a href="/updateCSV?fileName=tags.csv">Update Tags</a>
+</body>
+
+</html>
