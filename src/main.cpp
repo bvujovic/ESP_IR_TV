@@ -221,13 +221,15 @@ void setup()
   SPIFFS.begin();
   ConnectToWiFi();
   UpdateCSV::DownloadNewCsvIN();
+  UpdateCSV::UploadNewCsvIN();
   SetupIPAddress(20);
   server.on("/act", handleAction);
   server.on("/test", handleTest);
   server.on("/getChannels", handleGetChannels);
   server.on("/getTags", handleGetTags);
   server.on("/setTags", handleSetTags);
-  server.on("/updateCSV", []() { UpdateCSV::HandleUpdateCSV(server); });
+  server.on("/downloadCSV", []() { UpdateCSV::HandleDownloadCSV(server); });
+  server.on("/uploadCSV", []() { UpdateCSV::HandleUploadCSV(server); });
   server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });

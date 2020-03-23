@@ -1,0 +1,16 @@
+<!-- 
+    Veb stranica koja obavestava korisnika da mora malo da saceka dok se ESP resetuje
+    i zatim ga redirektuje na index stranicu.
+-->
+<HTML>
+
+<HEAD>
+    <TITLE>TV ctrl</TITLE>
+    <script> function f() { window.location.href = '/'; } </script>
+</HEAD>
+
+<BODY onload="setTimeout(f, 5000);">
+    <B>App will be refreshed in less than 5 secs.</B>
+</BODY>
+
+</HTML>
