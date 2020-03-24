@@ -87,7 +87,7 @@ function getTags() {
         if (this.readyState == 4 && this.status == 200) {
             var a = this.responseText.split(sepRows);
             for (const t of a) {
-                if (t.trim().length === 0) continue;             
+                if (t.trim().length === 0) continue;
                 const props = t.split(sepProps);
                 var chans = props[2].trim().length > 0 ? props[2].trim().split(sepChans) : [];
                 tags.push(new Tag(props[0], props[1], chans));
@@ -209,6 +209,7 @@ function openTagsPopup() {
 
 function TagsChansUpdate() {
     const chks = document.getElementById('frmTagsMain').getElementsByTagName('input');
+    chNum = '' + chNum;
     for (let i = 0; i < tags.length; i++) {
         if (chks[i].checked && !tags[i].channels.includes(chNum))
             tags[i].channels.push(chNum);
