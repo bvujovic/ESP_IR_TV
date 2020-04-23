@@ -3,6 +3,8 @@ function el(id) { return document.getElementById(id); }
 function setCurrentButtonColor(curBtn) {
     if (!curBtn.id.startsWith('ch'))
         return;
+    if (curBtn.id.endsWith('_sel'))
+        curBtn = curBtn.previousElementSibling;
     const btns = document.getElementById('main').getElementsByTagName('button');
     for (const btn of btns)
         btn.style.backgroundColor = '#000';
@@ -14,13 +16,15 @@ var setClickAll = true;
 function setClickHandler() {
     const butts = document.getElementsByTagName('button');
     for (var i = 0; i < butts.length; i++)
-        // if (setClickAll || !butts[i].id.startsWith('mode'))
         if (setClickAll || (!butts[i].id.startsWith('mode') && butts[i].parentNode.tagName != 'HEADER' && butts[i].parentNode.tagName != 'FOOTER'))
             butts[i].addEventListener('click', function () { setCurrentButtonColor(this); send(this.id); }, false);
     setClickAll = false;
 }
 
 function send(cmd) {
+    //T console.log('send: ' + cmd);
+    if (cmd == '')
+        return;
     if (cmd == 'onOff' && !confirm('Are you sure?'))
         return;
     if (cmd.endsWith('_sel'))
@@ -52,10 +56,23 @@ function send(cmd) {
             }
         }
     }
-    url = 'act?cmd=' + cmd;
-    var x = new XMLHttpRequest();
-    x.open('GET', url, true);
-    x.send(null);
+    const itv = cmd.startsWith('ch') && !cmd.endsWith('_sel') ? 333 : 0;
+    setTimeout(httpGet, itv, cmd);
+}
+
+// Komanda se salje veb serveru iz httpGet() samo ako je ovo 0.
+// Dblclick ovo postavlja na 2 da se sledeca dva poziva httpGet() neutralisala tako da samo izleti popup.
+var cancelSend = 0;
+
+function httpGet(cmd) {
+    if (cancelSend > 0)
+        cancelSend--;
+    else {
+        url = 'act?cmd=' + cmd;
+        var x = new XMLHttpRequest();
+        x.open('GET', url, true);
+        x.send(null);
+    }
 }
 
 const sepRows = '\n';
@@ -178,7 +195,7 @@ function displayChannels() {
         tagNames = TagsForChan(ch.number);
         const sel = loadSelectedChannels ? '<<' : '>>';
         const selDisabled = ch.isSelected && !loadSelectedChannels ? 'disabled' : '';
-        s += "<div> <button ondblclick='chId=this.id; openTagsPopup()' id='ch" + i + "' value='" + tagNames + "'>"
+        s += "<div> <button ondblclick='cancelSend=2; chId=this.id; openTagsPopup()' id='ch" + i + "' value='" + tagNames + "'>"
             + ch.name + "</button> <button id='ch" + i + "_sel' " + selDisabled + ">" + sel + "</button> </div>";
     }
     document.getElementById('main').innerHTML = s;

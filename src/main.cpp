@@ -3,6 +3,9 @@
 #include <WiFiServerBasics.h>
 ESP8266WebServer server(80);
 
+#include <ArduinoOTA.h>
+bool isOtaOn = false; // da li je OTA update u toku
+
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 IRsend irsend(D2);
@@ -95,6 +98,7 @@ void handleSetTags()
 // test json
 void handleTest()
 {
+  Serial.println("/test");
   server.send(200, "application/json", "{ 'app': 'ESP_IR_TV' }");
 }
 
@@ -231,6 +235,7 @@ void setup()
   server.on("/downloadCSV", []() { UpdateCSV::HandleDownloadCSV(server); });
   server.on("/uploadCSV", []() { UpdateCSV::HandleUploadCSV(server); });
   server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
+  server.on("/otaUpdate", []() { server.send(200, "text/plain", "ESP is waiting for OTA updates..."); isOtaOn = true; ArduinoOTA.begin(); });
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
@@ -243,6 +248,10 @@ void setup()
 
 void loop()
 {
-  server.handleClient();
   delay(10);
+
+  if (isOtaOn)
+    ArduinoOTA.handle();
+  else
+    server.handleClient();
 }
