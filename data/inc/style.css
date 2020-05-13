@@ -11,7 +11,8 @@ header button { margin: 0 1px 1px 0; width: calc(33.33% - 1px); height: 33.33%; 
 #modes button { width: 33.33%; height: 100%; border-top-left-radius: 15px; background-color: #222; }
 #modes button:active { background-color: #000 }
 #main { margin: 5px 0; height: calc(100% - 200px); overflow: scroll; width: 100% }
-#search { width: calc(100% - 4px); margin-bottom: 3px; font-size: 150% }
+.aboveChannels { width: calc(100% - 4px); margin-bottom: 3px; font-size: 150% }
+#btnSelOrder { color: grey; }
 #main div { height: 60px; width: 100%; float: left }
 #main div button { float: left; height: 100%; width: 80%; font-size: 150% }
 #main div button:disabled { color: #000 }

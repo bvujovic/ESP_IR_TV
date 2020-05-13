@@ -9,19 +9,20 @@ bool isOtaOn = false; // da li je OTA update u toku
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 IRsend irsend(D2);
+#include <NecCode.h>
 
 #include "UpdateCSV.h"
 #include "Channel.h"
 #include <SpiffsUtils.h>
 #include "FS.h"
 
-const byte pinLed = LED_BUILTIN;
-const byte itvShortDelay = 50; // pauza izmedju 2 uzastopna signala
-const byte itvLongDelay = 150; // dodatna pauza izmedju 2 uzastopna signala kada su susedne cifre iste
-const byte cntBitsSent = 32;   // broj bita koji se salju IR putem
-int cntChannels;               // broj TV kanala koji se pamte u nizu channels
-int idxCurrentChannel = -1;
-bool justSelectedChannels = false;
+const uint pinLed = LED_BUILTIN;
+const uint itvShortDelay = 50;      // pauza izmedju 2 uzastopna signala
+const uint itvLongDelay = 200;      // dodatna pauza izmedju 2 uzastopna signala kada su susedne cifre iste
+uint cntChannels;                   // broj TV kanala koji se pamte u nizu channels
+bool guideLastAct = false;          // da li je poslednja akcija klik na GUIDE
+const char *CH_PREFIX = "ch";       // komanda za promenu kanala ima ovaj prefiks
+const char *SEL_CH_SUFFIX = "_sel"; // komanda koja stavlja kanal u selektovane ima ovaj sufiks
 
 Channel *channels;
 
@@ -55,7 +56,7 @@ void initChannels()
         break;
       String strNumber = l.substring(0, idx);
       String name = l.substring(idx + 1);
-      channels[i].init(name, strNumber.toInt());
+      channels[i].Init(name, strNumber.toInt());
       i++;
     }
     fp.close();
@@ -64,22 +65,9 @@ void initChannels()
     Serial.println("channels.csv open (r) faaail.");
 }
 
-String channelsToString(bool selectedChannels = false)
-{
-  justSelectedChannels = selectedChannels;
-  String s = "";
-  for (int i = 0; i < cntChannels; i++)
-    if (!selectedChannels || channels[i].isSelected)
-    {
-      s.concat(channels[i].toString());
-      s.concat('\n');
-    }
-  return s;
-}
-
 void handleGetChannels()
 {
-  server.send(200, "text/x-csv", channelsToString());
+  server.send(200, "text/x-csv", Channel::ChannelsToString(channels, cntChannels));
 }
 
 const String TAGS_INI = "/dat/tags.csv";
@@ -110,7 +98,7 @@ void sendIRcodes(long *codes)
     if (i != 0 && codes[i] == codes[i - 1])
       delay(itvLongDelay);
     //T Serial.println(codes[i]);
-    irsend.sendNEC(codes[i], cntBitsSent);
+    irsend.sendNEC(codes[i]);
     delay(itvShortDelay);
   }
 }
@@ -152,63 +140,55 @@ long *IRcodes(short chNumber, bool spin)
 void handleAction()
 {
   String cmd = server.arg("cmd");
-  //T Serial.println(cmd);
+  Serial.print(cmd);
 
   // gornji deo daljinskog
   if (cmd == "onOff")
-    irsend.sendNEC(0x20DF10EF, cntBitsSent);
+    irsend.sendNEC(OnOff);
   if (cmd == "mute")
-    // irsend.sendNEC(0x20DF906F, cntBitsSent); // 551522415
-    irsend.sendNEC(551522415, cntBitsSent);
+    irsend.sendNEC(Mute);
   if (cmd == "volUp")
   {
-    irsend.sendNEC(0x20DF40BF, cntBitsSent);
+    irsend.sendNEC(VolUp);
     delay(itvShortDelay);
-    irsend.sendNEC(0x20DF40BF, cntBitsSent);
+    irsend.sendNEC(VolUp);
   }
   if (cmd == "volDown")
   {
-    irsend.sendNEC(0x20DFC03F, cntBitsSent);
+    irsend.sendNEC(VolDown);
     delay(itvShortDelay);
-    irsend.sendNEC(0x20DFC03F, cntBitsSent);
+    irsend.sendNEC(VolDown);
   }
 
-  // boje
-  if (cmd == "colorGreen")
-    irsend.sendNEC(0x20DF8E71, cntBitsSent);
-  if (cmd == "colorYellow")
-    irsend.sendNEC(0x20DFC639, cntBitsSent);
-  // crveno 0x20DF4EB1
-  // plavo  0x20DF8679
-
   if (cmd == "guide")
-    irsend.sendNEC(0x20DFD52A, cntBitsSent);
+  {
+    irsend.sendNEC(Guide);
+    guideLastAct = true;
+  }
   if (cmd == "arrRight")
-    irsend.sendNEC(0x20DF609F, cntBitsSent);
+    irsend.sendNEC(ArrowRight);
   if (cmd == "back")
-    irsend.sendNEC(0x20DF14EB, cntBitsSent);
-  // settings 20DFC23D
-  // exit     20DFDA25
-  // inputs   20DFD02F
-  // up       20DF02FD
-  // down     20DF827D
-  // left     20DFE01F
-  // ok       20DF22DD
+    irsend.sendNEC(Back);
 
-  if (cmd.startsWith("ch")) // kanali
+  if (cmd.startsWith(CH_PREFIX)) // kanali
   {
     String ch = cmd.substring(2);
-    if (cmd.endsWith("_sel")) // selektovanje kanala
+    if (cmd.endsWith(SEL_CH_SUFFIX)) // selektovanje kanala
     {
-      ch = ch.substring(0, ch.lastIndexOf("_"));
+      ch = ch.substring(0, ch.lastIndexOf(SEL_CH_SUFFIX));
       int idx = ch.toInt();
-      channels[idx].isSelected = !channels[idx].isSelected;
-      Serial.println(channels[idx].isSelected);
+      channels[idx].ToggleSelected();
     }
     else // aktiviranje kanala
     {
+      if (guideLastAct)
+      {
+        guideLastAct = false;
+        irsend.sendNEC(Back);
+        delay(itvLongDelay);
+      }
       int idx = ch.toInt();
-      Serial.println(channels[idx].toString());
+      Serial.println(channels[idx].ToString());
       sendIRcodes(IRcodes(channels[idx].number, channels[idx].spin));
     }
   }
@@ -220,7 +200,7 @@ void setup()
 {
   Serial.begin(115200);
   pinMode(pinLed, OUTPUT);
-  digitalWrite(pinLed, true);
+  digitalWrite(pinLed, false);
 
   SPIFFS.begin();
   ConnectToWiFi();
@@ -244,6 +224,7 @@ void setup()
   Serial.println("HTTP server started");
   initChannels();
   irsend.begin();
+  digitalWrite(pinLed, true);
 }
 
 void loop()

@@ -6,35 +6,23 @@ struct Channel
 {
     static const char SepProps = '|'; // separator za razdvajanje svojstava u objektu
 
-    String name;  // naziv kanala
-    short number; // broj kanala na TVu
-    bool spin;    // false(0) ako je prvi od dva kanala na istom broju, true(1) je drugi
-    bool isSelected;
-    String tags;
+    static uint idxSelectedGen;
+
+    String name;      // Naziv kanala.
+    short number;     // Broj kanala na TVu.
+    bool spin;        // DEPRECATED. false(0) ako je prvi od dva kanala na istom broju, true(1) je drugi.
+    uint idxSelected; // Broj kanala u selected listi. 0 - nije selected.
+    String tags;      // Lista tagova koji se odnose na ovaj kanal.
 
     Channel() {}
-
-    void init(String name, short number, bool spin = false)
-    {
-        this->name = name;
-        this->number = number;
-        this->spin = spin;
-    }
-
-    String toString()
-    {
-        String s = name;
-        s.concat(SepProps);
-        s.concat(number);
-        s.concat(SepProps);
-        s.concat(spin);
-        s.concat(SepProps);
-        s.concat(isSelected);
-        if (tags != "") // ako kanal ima tagove - dodaj ih u string
-        {
-            s.concat(SepProps);
-            s.concat(tags);
-        }
-        return s;
-    }
+    // Inicijalizacija Channel objekta prosledjenim podacima.
+    void Init(String name, short number, bool spin = false);
+    // Tekstualna serijalizacija podataka o kanalu. Npr "0|N1 HD|1|1"
+    String ToString();
+    // Da li je kanal selektovan, tj. da li pripada listi kanala kroz koje trenutno korisnik prolazi.
+    bool IsSelected() { return idxSelected != 0; }
+    // Promena selektovanosti kanala. Nije selektovan <-> selektovan.
+    void ToggleSelected();
+    // Tekstualna serijalizacija podataka o svim kanalima iz prosledjenog niza.
+    static String ChannelsToString(Channel *channels, uint cntChannels);
 };

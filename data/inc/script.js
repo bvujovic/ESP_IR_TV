@@ -1,7 +1,7 @@
 function el(id) { return document.getElementById(id); }
 
 function setCurrentButtonColor(curBtn) {
-    if (!curBtn.id.startsWith('ch'))
+    if (!curBtn.id.startsWith('ch') || selectedsOrdering)
         return;
     if (curBtn.id.endsWith('_sel'))
         curBtn = curBtn.previousElementSibling;
@@ -21,6 +21,15 @@ function setClickHandler() {
     setClickAll = false;
 }
 
+// Poredjenje 2 kanala prema rednom broju selected liste 
+function CmpChan(a, b) {
+    if (a.isSelected < b.isSelected)
+        return -1;
+    if (a.isSelected > b.isSelected)
+        return 1;
+    return 0;
+}
+
 function send(cmd) {
     //T console.log('send: ' + cmd);
     if (cmd == '')
@@ -29,8 +38,26 @@ function send(cmd) {
         return;
     if (cmd.endsWith('_sel'))
         if (loadSelectedChannels) {
-            const mainDiv = document.getElementById('main');
-            mainDiv.removeChild(document.getElementById(cmd).parentNode);
+            if (selectedsOrdering) {
+                //T chans[0].isSelected = 2;
+                // console.log(cmd.substring(2));
+                // console.log(parseInt(cmd.substring(2)));
+                // var idx = 1;
+                // for (const ch of chans)
+                //     if (ch.isSelected != 0)
+                //         ch.isSelected = idx++;
+
+                chans.sort(CmpChan);
+                for (const ch of chans) {
+                    if (ch.isSelected != 0)
+                        console.log(ch.toString());
+                }
+                return;
+            }
+            else {
+                const mainDiv = document.getElementById('main');
+                mainDiv.removeChild(document.getElementById(cmd).parentNode);
+            }
         }
         else
             document.getElementById(cmd).disabled = true;
@@ -56,7 +83,7 @@ function send(cmd) {
             }
         }
     }
-    const itv = cmd.startsWith('ch') && !cmd.endsWith('_sel') ? 333 : 0;
+    const itv = cmd.startsWith('ch') && !cmd.endsWith('_sel') ? 300 : 0;
     setTimeout(httpGet, itv, cmd);
 }
 
@@ -165,6 +192,7 @@ Channel.prototype.toString = function () {
 var loadSelectedChannels = false;
 
 function getChannels() {
+    selectedsOrdering = false;
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -186,8 +214,17 @@ var selChId = 'ch0';
 
 function clearVal(el) { el.value = ''; }
 
+var selectedsOrdering = false;
+function btnSelOrderClick(btn) {
+    selectedsOrdering = !selectedsOrdering;
+    btn.innerText = selectedsOrdering ? "Reordering..." : "Click to Reorder";
+    btn.style.color = selectedsOrdering ? "orange" : "grey";
+}
+
 function displayChannels() {
-    var s = "<input type='text' id='search' autocomplete='off' onkeyup='chSearch(this.value);' onclick='clearVal(this); chSearch(this.value)' placeholder='Search' />";
+    var s = loadSelectedChannels ?
+        "<button id='btnSelOrder' class='aboveChannels' onclick='btnSelOrderClick(this);'>Click to Reorder</button>" :
+        "<input type='text' id='search' class='aboveChannels' autocomplete='off' onkeyup='chSearch(this.value);' onclick='clearVal(this); chSearch(this.value)' placeholder='Search' />";
     for (i = 0; i < chans.length; i++) {
         const ch = chans[i];
         if (loadSelectedChannels && !ch.isSelected)
