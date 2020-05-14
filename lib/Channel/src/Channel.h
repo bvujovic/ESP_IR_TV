@@ -23,6 +23,8 @@ struct Channel
     bool IsSelected() { return idxSelected != 0; }
     // Promena selektovanosti kanala. Nije selektovan <-> selektovan.
     void ToggleSelected();
+    // Pomeranje kanala jedno mesto nagore u listi selektovanih.
+    static void ChannelSelMoveUp(Channel *channels, uint cntChannels, uint idxChan);
     // Tekstualna serijalizacija podataka o svim kanalima iz prosledjenog niza.
     static String ChannelsToString(Channel *channels, uint cntChannels);
 };

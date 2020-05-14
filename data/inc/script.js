@@ -21,11 +21,24 @@ function setClickHandler() {
     setClickAll = false;
 }
 
-// Poredjenje 2 kanala prema rednom broju selected liste 
-function CmpChan(a, b) {
-    if (a.isSelected < b.isSelected)
+/** Poredjenje 2 kanala prema rednom broju selected liste.
+ * @param {Channel} a 
+ * @param {Channel} b */
+function CmpChanIdxSel(a, b) {
+    if (a.idxSelected < b.idxSelected)
         return -1;
-    if (a.isSelected > b.isSelected)
+    if (a.idxSelected > b.idxSelected)
+        return 1;
+    return 0;
+}
+
+/** Poredjenje 2 kanala prema ID-u.
+ * @param {Channel} a 
+ * @param {Channel} b */
+function CmpChanId(a, b) {
+    if (a.id < b.id)
+        return -1;
+    if (a.id > b.id)
         return 1;
     return 0;
 }
@@ -39,19 +52,13 @@ function send(cmd) {
     if (cmd.endsWith('_sel'))
         if (loadSelectedChannels) {
             if (selectedsOrdering) {
-                //T chans[0].isSelected = 2;
-                // console.log(cmd.substring(2));
-                // console.log(parseInt(cmd.substring(2)));
-                // var idx = 1;
-                // for (const ch of chans)
-                //     if (ch.isSelected != 0)
-                //         ch.isSelected = idx++;
-
-                chans.sort(CmpChan);
-                for (const ch of chans) {
-                    if (ch.isSelected != 0)
-                        console.log(ch.toString());
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200)
+                        getChannels();
                 }
+                const idxChan = parseInt(cmd.substring(2));
+                xhttp.open('GET', 'chanSelMoveUp?idxChan=' + idxChan, true); xhttp.send();
                 return;
             }
             else {
@@ -106,45 +113,54 @@ const sepRows = '\n';
 const sepProps = '|';
 const sepChans = ',';
 
-function Tag(id, name, channels) {
-    this.id = id;
-    this.name = name;
-    this.channels = channels;
-}
-Tag.prototype.chanAdd = function (id) {
-    this.channels.push(id);
-}
-Tag.prototype.chanDel = function (id) {
-    const idx = this.channels.indexOf(id);
-    if (idx >= 0)
-        this.channels.splice(idx, 1);
-}
-Tag.prototype.toString = function () {
-    return this.id + sepProps + this.name + sepProps + this.channels.join(sepChans);
-}
+class Tag {
+    constructor(id, name, channels) {
+        this.id = id;
+        this.name = name;
+        this.channels = channels;
+    }
 
-var tags = [];
+    chanAdd(id) {
+        this.channels.push(id);
+    }
 
-function getTags() {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            var a = this.responseText.split(sepRows);
-            for (const t of a) {
-                if (t.trim().length === 0) continue;
-                const props = t.split(sepProps);
-                var chans = props[2].trim().length > 0 ? props[2].trim().split(sepChans) : [];
-                tags.push(new Tag(props[0], props[1], chans));
+    chanDel(id) {
+        const idx = this.channels.indexOf(id);
+        if (idx >= 0)
+            this.channels.splice(idx, 1);
+    }
+
+    ToString() {
+        return this.id + sepProps + this.name + sepProps + this.channels.join(sepChans);
+    }
+
+    static GetTags() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var a = this.responseText.split(sepRows);
+                tags = [];
+                for (const t of a) {
+                    if (t.trim().length === 0) continue;
+                    const props = t.split(sepProps);
+                    var chans = props[2].trim().length > 0 ? props[2].trim().split(sepChans) : [];
+                    tags.push(new Tag(props[0], props[1], chans));
+                }
+                displayTagsInPopup();
             }
-            displayTagsInPopup();
-        }
-    };
-    xhttp.open('GET', 'getTags', true); xhttp.send();
+        };
+        xhttp.open('GET', 'getTags', true); xhttp.send();
+    }
+
 }
+
+/** Niz svih tagova.
+ * @type {Tag[]} */
+var tags = [];
 
 function TagButtonClick(tag) {
     loadSelectedChannels = false;
-    displayChannels(); //B getChannels();
+    displayChannels();
     el('search').value = tag;
     chSearch(tag);
 }
@@ -179,20 +195,34 @@ function TagIDsForChan(chNum) {
     return a;
 }
 
-function Channel(id, name, number, isSelected) {
-    this.id = id;
-    this.name = name;
-    this.number = number;
-    this.isSelected = isSelected;
-}
-Channel.prototype.toString = function () {
-    return this.id + sepProps + this.name + sepProps + this.number + sepProps + this.isSelected;
+class Channel {
+
+    constructor(id, name, number, idxSelected) {
+        /** Id kanala
+         * @type {number} */
+        this.id = id;
+        /** Naziv kanala
+         * @type {string} */
+        this.name = name;
+        /** Broj kanala na TVu
+         * @type {number} */
+        this.number = number;
+        /** Broj kanala u selected listi. 0 - nije selected
+         * @type {number} */
+        this.idxSelected = idxSelected;
+    }
+
+    ToString() {
+        return this.id + sepProps + this.name + sepProps + this.number + sepProps + this.idxSelected;
+    }
+
 }
 
 var loadSelectedChannels = false;
 
 function getChannels() {
-    selectedsOrdering = false;
+    if (!loadSelectedChannels)
+        selectedsOrdering = false;
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -209,33 +239,51 @@ function getChannels() {
     }
     xhttp.open('GET', 'getChannels', true); xhttp.send();
 }
+
+/** Niz svih kanala.
+ * @type {Channel[]} */
 var chans = [];
 var selChId = 'ch0';
 
 function clearVal(el) { el.value = ''; }
 
+/** Da li su selected kanali u normalnom ili u modu [re]ordering. */
 var selectedsOrdering = false;
-function btnSelOrderClick(btn) {
+function btnSelOrderClick() {
     selectedsOrdering = !selectedsOrdering;
+    //B
+    // btn.innerText = selectedsOrdering ? "Reordering..." : "Click to Reorder";
+    // btn.style.color = selectedsOrdering ? "orange" : "grey";
+    FormatBtnSelOrder();
+}
+
+function FormatBtnSelOrder() {
+    const btn = el('btnSelOrder');
     btn.innerText = selectedsOrdering ? "Reordering..." : "Click to Reorder";
     btn.style.color = selectedsOrdering ? "orange" : "grey";
 }
 
 function displayChannels() {
     var s = loadSelectedChannels ?
-        "<button id='btnSelOrder' class='aboveChannels' onclick='btnSelOrderClick(this);'>Click to Reorder</button>" :
+        "<button id='btnSelOrder' class='aboveChannels' onclick='btnSelOrderClick();'>Click to Reorder</button>" :
         "<input type='text' id='search' class='aboveChannels' autocomplete='off' onkeyup='chSearch(this.value);' onclick='clearVal(this); chSearch(this.value)' placeholder='Search' />";
+    if (loadSelectedChannels)
+        chans.sort(CmpChanIdxSel);
+    else
+        chans.sort(CmpChanId);
     for (i = 0; i < chans.length; i++) {
         const ch = chans[i];
-        if (loadSelectedChannels && !ch.isSelected)
+        if (loadSelectedChannels && ch.idxSelected == 0)
             continue;
         tagNames = TagsForChan(ch.number);
         const sel = loadSelectedChannels ? '<<' : '>>';
-        const selDisabled = ch.isSelected && !loadSelectedChannels ? 'disabled' : '';
-        s += "<div> <button ondblclick='cancelSend=2; chId=this.id; openTagsPopup()' id='ch" + i + "' value='" + tagNames + "'>"
-            + ch.name + "</button> <button id='ch" + i + "_sel' " + selDisabled + ">" + sel + "</button> </div>";
+        const selDisabled = ch.idxSelected && !loadSelectedChannels ? 'disabled' : '';
+        s += "<div> <button ondblclick='cancelSend=2; chId=this.id; openTagsPopup()' id='ch" + ch.id + "' value='" + tagNames + "'>"
+            + ch.name + "</button> <button id='ch" + ch.id + "_sel' " + selDisabled + ">" + sel + "</button> </div>";
     }
     document.getElementById('main').innerHTML = s;
+    if (loadSelectedChannels)
+        FormatBtnSelOrder();
     setClickHandler();
 }
 
@@ -253,7 +301,6 @@ function openTagsPopup() {
     const id = chId.substring(2);
     ch = chans[id];
     chNum = ch.number;
-    //T const tagIDs = [];
     const tagIDs = TagIDsForChan(chNum);
     document.getElementById('frmTagsSel').style.display = 'block';
     const chks = document.getElementById('frmTagsMain').getElementsByTagName('input');
@@ -283,6 +330,6 @@ function confirmTagsPopup() {
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", "/setTags", true);
     xhttp.setRequestHeader("Content-type", "text/plain");
-    xhttp.send(tags.join('\n'));
+    xhttp.send(tags.join(sepRows));
     closeTagsPopup();
 }

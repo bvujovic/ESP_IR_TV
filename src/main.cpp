@@ -83,6 +83,13 @@ void handleSetTags()
   server.send(200, "text/plain", "");
 }
 
+void handleChanSelMoveUp()
+{
+  String idxChan = server.arg("idxChan");
+  Channel::ChannelSelMoveUp(channels, cntChannels, idxChan.toInt());
+  server.send(200, "text/plain", "");
+}
+
 // test json
 void handleTest()
 {
@@ -140,7 +147,7 @@ long *IRcodes(short chNumber, bool spin)
 void handleAction()
 {
   String cmd = server.arg("cmd");
-  Serial.print(cmd);
+  Serial.println(cmd);
 
   // gornji deo daljinskog
   if (cmd == "onOff")
@@ -216,6 +223,7 @@ void setup()
   server.on("/uploadCSV", []() { UpdateCSV::HandleUploadCSV(server); });
   server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
   server.on("/otaUpdate", []() { server.send(200, "text/plain", "ESP is waiting for OTA updates..."); isOtaOn = true; ArduinoOTA.begin(); });
+  server.on("/chanSelMoveUp", handleChanSelMoveUp);
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
