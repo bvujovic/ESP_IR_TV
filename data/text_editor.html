@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle 2 - Text Editor</title>
+    <link rel="icon" href="inc/vehicle.png" type="image/png" />
+    <link href="inc/style.css" rel="stylesheet" type="text/css">
+    <style>
+        * {
+            color: white;
+        }
+
+        input,
+        option {
+            color: black;
+        }
+
+        textarea {
+            background-color: black;
+        }
+    </style>
+    <script>
+        //B function docel(id) { return document.getElementById(id); }
+
+        /** Bojenje cmbFileName padajuce liste u odnosu na to da li se ceka odgovor servera.
+         * @param {boolean} isWorking
+        */
+        function Loading(isWorking) {
+            cmbFileName.style.backgroundColor = isWorking ? 'red' : 'black';
+        }
+
+        /** Bojenje Save dugmeta u odnosu na to da li se ceka odgovor servera.
+         * @param {boolean} isWorking
+        */
+        function Saving(isWorking) {
+            btnSaveFile.style.backgroundColor = isWorking ? 'red' : 'black';
+        }
+
+        function CmbFileNameChange() {
+            txtContent.value = '';
+            const fileName = cmbFileName.value;
+            if (fileName == '---') {
+                Loading(false);
+                return;
+            }
+            Loading(true);
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    Loading(false);
+                    txtContent.value = this.responseText;
+                }
+            };
+            var url = '/loadTextFile?name=' + cmbFileName.value;
+            xhttp.open('GET', url, true); xhttp.send();
+        }
+
+        function SaveFile() {
+            Saving(true);
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200)
+                    Saving(false);
+            };
+            xhttp.open("POST", "/saveTextFile", true);
+            xhttp.setRequestHeader("Content-type", "text/plain");
+            xhttp.send(txtContent.value);
+        }
+    </script>
+</head>
+
+<body onload=''>
+    <h1 id='h1'>TV ctrl - Text Editor</h1>
+
+    <p>
+        <a href="/">Home</a>
+    </p>
+    <table class="head-tbl">
+        <tr>
+            <td>File Name:</td>
+            <td>
+                <select id="cmbFileName" autofocus onchange="CmbFileNameChange();">
+                    <option>---</option>
+                    <option>/dat/lighting.ini</option>
+                    <option>/dat/channels.csv</option>
+                    <option>/dat/tags.csv</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">File Content:</td>
+            <td>
+                <textarea id="txtContent" cols="50" rows="15"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="button" id='btnSaveFile' value="Save file" onclick="SaveFile()" style="padding: 3px 15px;">
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

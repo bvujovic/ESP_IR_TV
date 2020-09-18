@@ -9,12 +9,14 @@ bool isOtaOn = false; // da li je OTA update u toku
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 IRsend irsend(D2);
-#include <NecCode.h>
+#include <NecCodes.h>
+
+#include "Subtitles.h"
+Subtitles subs;
 
 #include "UpdateCSV.h"
 #include "Channel.h"
-#include <SpiffsUtils.h>
-#include "FS.h"
+#include <LittleFsUtils.h>
 
 const uint pinLed = LED_BUILTIN;
 const uint itvShortDelay = 50;      // pauza izmedju 2 uzastopna signala
@@ -28,7 +30,7 @@ Channel *channels;
 
 void initChannels()
 {
-  File fp = SPIFFS.open("/dat/channels.csv", "r");
+  File fp = LittleFS.open("/dat/channels.csv", "r");
   cntChannels = 0;
 
   int b; // bajt koji je procitan iz fajla
@@ -74,12 +76,12 @@ const String TAGS_INI = "/dat/tags.csv";
 
 void handleGetTags()
 {
-  server.send(200, "text/x-csv", SpiffsUtils::ReadFile(TAGS_INI));
+  server.send(200, "text/x-csv", LittleFsUtils::ReadFile(TAGS_INI));
 }
 
 void handleSetTags()
 {
-  SpiffsUtils::WriteFile(TAGS_INI, server.arg("plain"));
+  LittleFsUtils::WriteFile(TAGS_INI, server.arg("plain"));
   server.send(200, "text/plain", "");
 }
 
@@ -155,17 +157,21 @@ void handleAction()
   if (cmd == "mute")
     irsend.sendNEC(Mute);
   if (cmd == "volUp")
-  {
     irsend.sendNEC(VolUp);
-    delay(itvShortDelay);
-    irsend.sendNEC(VolUp);
-  }
   if (cmd == "volDown")
-  {
     irsend.sendNEC(VolDown);
-    delay(itvShortDelay);
-    irsend.sendNEC(VolDown);
-  }
+  //T utisavanje za 10
+  // for (size_t i = 0; i < 10; i++)
+  // {
+  //   irsend.sendNEC(VolDown);
+  //   delay(100);
+  // }
+  if (cmd == "colorRed")
+    irsend.sendNEC(ColorRed);
+  if (cmd == "colorGreen")
+    irsend.sendNEC(ColorGreen);
+  if (cmd == "colorYellow")
+    irsend.sendNEC(ColorYellow);
 
   if (cmd == "guide")
   {
@@ -197,10 +203,44 @@ void handleAction()
       int idx = ch.toInt();
       Serial.println(channels[idx].ToString());
       sendIRcodes(IRcodes(channels[idx].number, channels[idx].spin));
+
+      //B if (channels[idx].number == 217) // test Subtitle opcije za ID (ubistva) kanal
+      if (subs.forChannel(channels[idx].number))
+      {
+        delay(4000);
+        irsend.sendNEC(Subtitle);
+        delay(itvLongDelay);
+        irsend.sendNEC(Subtitle);
+        delay(itvLongDelay);
+        irsend.sendNEC(Ok);
+      }
     }
   }
 
   server.send(200, "application/json", "{}");
+}
+
+String textFileName;
+
+void handleLoadTextFile()
+{
+  textFileName = server.arg("name");
+  File f = LittleFS.open(textFileName, "r");
+  if (f)
+  {
+    server.streamFile(f, "text/css");
+    f.close();
+  }
+  else
+    Serial.println(textFileName + " - error reading file.");
+}
+
+void handleSaveTextFile()
+{
+  LittleFsUtils::WriteFile(textFileName, server.arg("plain"));
+  server.send(200, "text/plain", "");
+
+  ESP.reset();
 }
 
 void setup()
@@ -209,7 +249,9 @@ void setup()
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, false);
 
-  SPIFFS.begin();
+  LittleFS.begin();
+
+  WiFi.mode(WIFI_STA);
   ConnectToWiFi();
   UpdateCSV::DownloadNewCsvIN();
   UpdateCSV::UploadNewCsvIN();
@@ -221,6 +263,9 @@ void setup()
   server.on("/setTags", handleSetTags);
   server.on("/downloadCSV", []() { UpdateCSV::HandleDownloadCSV(server); });
   server.on("/uploadCSV", []() { UpdateCSV::HandleUploadCSV(server); });
+  server.on("/loadTextFile", handleLoadTextFile);
+  server.on("/saveTextFile", handleSaveTextFile);
+  server.on("/edit", []() { HandleDataFile(server, "/text_editor.html", "text/html"); });
   server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
   server.on("/otaUpdate", []() { server.send(200, "text/plain", "ESP is waiting for OTA updates..."); isOtaOn = true; ArduinoOTA.begin(); });
   server.on("/chanSelMoveUp", handleChanSelMoveUp);
@@ -231,6 +276,7 @@ void setup()
   server.begin();
   Serial.println("HTTP server started");
   initChannels();
+  subs.parseChannels("217,131");
   irsend.begin();
   digitalWrite(pinLed, true);
 }

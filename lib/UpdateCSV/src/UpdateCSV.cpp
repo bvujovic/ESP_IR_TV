@@ -1,6 +1,7 @@
 #include "UpdateCSV.h"
 #include <Arduino.h>
-#include <SpiffsUtils.h>
+//B #include <SpiffsUtils.h>
+#include <LittleFsUtils.h>
 
 const String UpdateCSV::DOWNLOAD_INI = "/dat/download.ini";
 const String UpdateCSV::UPLOAD_INI = "/dat/upload.ini";
@@ -12,9 +13,9 @@ void UpdateCSV::HandleDownloadCSV(ESP8266WebServer &server)
     String fileName = server.arg("fileName");
     //T Serial.println(fileName);
 
-    SpiffsUtils::WriteFile(DOWNLOAD_INI, fileName);
+    LittleFsUtils::WriteFile(DOWNLOAD_INI, fileName);
     delay(10);
-    server.send(200, "text/html", SpiffsUtils::ReadFile(WAIT_HTML));
+    server.send(200, "text/html", LittleFsUtils::ReadFile(WAIT_HTML));
     server.stop();
     delay(200);
     ESP.reset();
@@ -22,7 +23,7 @@ void UpdateCSV::HandleDownloadCSV(ESP8266WebServer &server)
 
 void UpdateCSV::DownloadNewCsvIN()
 {
-    if (!SPIFFS.exists(DOWNLOAD_INI))
+    if (!LittleFS.exists(DOWNLOAD_INI))
         return;
 
     Serial.println(DOWNLOAD_INI + " postoji");
@@ -37,7 +38,7 @@ void UpdateCSV::DownloadNewCsvIN()
     //T Serial.println("sending data to server");
     if (client.connected())
     {
-        csvFileName = SpiffsUtils::ReadFile(DOWNLOAD_INI);
+        csvFileName = LittleFsUtils::ReadFile(DOWNLOAD_INI);
         if (csvFileName.length() == 0)
             return;
 
@@ -61,7 +62,7 @@ void UpdateCSV::DownloadNewCsvIN()
     //T Serial.println(csvFileName);
     String line;
     bool writeToFile = false;
-    File fp = SPIFFS.open(String("/dat/") + csvFileName, "w");
+    File fp = LittleFS.open(String("/dat/") + csvFileName, "w");
     while (client.available())
     {
         line = client.readStringUntil('\n');
@@ -78,7 +79,7 @@ void UpdateCSV::DownloadNewCsvIN()
 
     //T Serial.println("closing connection");
     client.stop();
-    SPIFFS.remove(DOWNLOAD_INI);
+    LittleFS.remove(DOWNLOAD_INI);
     //T Serial.println("DownloadNewCsvIN - End.");
 }
 
@@ -87,9 +88,9 @@ void UpdateCSV::HandleUploadCSV(ESP8266WebServer &server)
     String fileName = server.arg("fileName");
     Serial.println(fileName);
 
-    SpiffsUtils::WriteFile(UPLOAD_INI, fileName);
+    LittleFsUtils::WriteFile(UPLOAD_INI, fileName);
     delay(10);
-    server.send(200, "text/html", SpiffsUtils::ReadFile(WAIT_HTML));
+    server.send(200, "text/html", LittleFsUtils::ReadFile(WAIT_HTML));
     server.stop();
     delay(200);
     ESP.reset();
@@ -97,11 +98,11 @@ void UpdateCSV::HandleUploadCSV(ESP8266WebServer &server)
 
 void UpdateCSV::UploadNewCsvIN()
 {
-    if (!SPIFFS.exists(UPLOAD_INI))
+    if (!LittleFS.exists(UPLOAD_INI))
         return;
 
     //T Serial.println(UPLOAD_INI + " postoji");
-    String csvFileName = SpiffsUtils::ReadFile(UPLOAD_INI);
+    String csvFileName = LittleFsUtils::ReadFile(UPLOAD_INI);
     if (csvFileName.length() == 0)
         return;
     //T Serial.println(csvFileName);
@@ -115,7 +116,7 @@ void UpdateCSV::UploadNewCsvIN()
 
     if (client.connected())
     {
-        String csvContent = UrlEncode(SpiffsUtils::ReadFile("/dat/" + csvFileName));
+        String csvContent = UrlEncode(LittleFsUtils::ReadFile("/dat/" + csvFileName));
         String content = "fileName=" + csvFileName + "&txt=" + csvContent;
         Serial.println(content);
         client.print(String("POST /php/esp_ir_tv_csv_upload.php HTTP/1.1\r\n") +
@@ -127,7 +128,7 @@ void UpdateCSV::UploadNewCsvIN()
     }
 
     client.stop();
-    SPIFFS.remove(UPLOAD_INI);
+    LittleFS.remove(UPLOAD_INI);
     //T Serial.println("UploadNewCsvIN kraj");
 }
 

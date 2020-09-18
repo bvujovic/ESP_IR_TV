@@ -1,4 +1,7 @@
+#pragma once
+
 // Kodovi za NEC daljinski upravljac.
+// Za listu svih kododva za daljinac pogledati fajl: data/dat/lg_ir_codes.ini
 enum NecCode
 {
     OnOff = 0x20DF10EF,
@@ -8,6 +11,7 @@ enum NecCode
     VolUp = 0x20DF40BF,
     VolDown = 0x20DFC03F,
 
+    Subtitle = 0x20DF9C63,
     Settings = 0x20DFC23D,
     Exit = 0x20DFDA25,
     Inputs = 0x20DFD02F,

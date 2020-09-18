@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ESP8266WebServer.h>
 
 class UpdateCSV
