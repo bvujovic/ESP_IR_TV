@@ -11,8 +11,12 @@ bool isOtaOn = false; // da li je OTA update u toku
 IRsend irsend(D2);
 #include <NecCodes.h>
 
+#include <EasyINI.h>
+EasyINI ei("/dat/config.ini");
 #include "Subtitles.h"
 Subtitles subs;
+#include "Lighting.h"
+Lighting lighting;
 
 #include "UpdateCSV.h"
 #include "Channel.h"
@@ -160,12 +164,6 @@ void handleAction()
     irsend.sendNEC(VolUp);
   if (cmd == "volDown")
     irsend.sendNEC(VolDown);
-  //T utisavanje za 10
-  // for (size_t i = 0; i < 10; i++)
-  // {
-  //   irsend.sendNEC(VolDown);
-  //   delay(100);
-  // }
   if (cmd == "colorRed")
     irsend.sendNEC(ColorRed);
   if (cmd == "colorGreen")
@@ -207,7 +205,7 @@ void handleAction()
       //B if (channels[idx].number == 217) // test Subtitle opcije za ID (ubistva) kanal
       if (subs.forChannel(channels[idx].number))
       {
-        delay(4000);
+        delay(5000);
         irsend.sendNEC(Subtitle);
         delay(itvLongDelay);
         irsend.sendNEC(Subtitle);
@@ -218,6 +216,17 @@ void handleAction()
   }
 
   server.send(200, "application/json", "{}");
+}
+
+void loadConfigIni()
+{
+  ei.open(FMOD_READ);
+  // subtitles
+  subs.parseChannels(ei.getString("subtitles"));
+  // lighing
+  lighting.init(ei.getInt("absentLightOn"), ei.getInt("absentLightStartHour"), ei.getInt("absentLightStartMin"),
+                ei.getInt("absentLightEndHour"), ei.getInt("absentLightEndMin"), ei.getInt("absentLightTimeDev"));
+  ei.close();
 }
 
 String textFileName;
@@ -240,7 +249,11 @@ void handleSaveTextFile()
   LittleFsUtils::WriteFile(textFileName, server.arg("plain"));
   server.send(200, "text/plain", "");
 
-  ESP.reset();
+  // ako je izmenjen config.ini, a lighting nije ukljucen - ESP se ne mora resetovati
+  if (textFileName.indexOf("config.ini") >= 0 && server.arg("plain").indexOf("absentLightOn=0") >= 0)
+    loadConfigIni();
+  else
+    ESP.reset();
 }
 
 void setup()
@@ -255,6 +268,7 @@ void setup()
   ConnectToWiFi();
   UpdateCSV::DownloadNewCsvIN();
   UpdateCSV::UploadNewCsvIN();
+  loadConfigIni();
   SetupIPAddress(20);
   server.on("/act", handleAction);
   server.on("/test", handleTest);
@@ -276,7 +290,6 @@ void setup()
   server.begin();
   Serial.println("HTTP server started");
   initChannels();
-  subs.parseChannels("217,131");
   irsend.begin();
   digitalWrite(pinLed, true);
 }
@@ -289,4 +302,10 @@ void loop()
     ArduinoOTA.handle();
   else
     server.handleClient();
+
+  int l = lighting.refresh();
+  if (l == 1) // pali svetlo
+    irsend.sendNEC(ColorGreen);
+  if (l == -1) // gasi svetlo
+    irsend.sendNEC(ColorGreen);
 }

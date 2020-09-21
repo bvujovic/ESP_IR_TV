@@ -15,3 +15,7 @@ public:
     // true - ako se c nalazi u listi kanala za koje treba prikazati titlove
     bool forChannel(int c);
 };
+
+//* Dorade. Nove metode:
+//      cancel()    Odustajanje od subs-a za svaku promenu kanala u 5sec intervalu od prebacivanja na 217 i sl
+//      refresh()   Redovno pozivanje u loop-u. Metoda ispituje da li treba da se ispali subs-subs-ok

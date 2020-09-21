@@ -13,6 +13,7 @@
         }
 
         input,
+        select,
         option {
             color: black;
         }
@@ -28,14 +29,14 @@
          * @param {boolean} isWorking
         */
         function Loading(isWorking) {
-            cmbFileName.style.backgroundColor = isWorking ? 'red' : 'black';
+            cmbFileName.style.backgroundColor = isWorking ? 'red' : 'lightgrey';
         }
 
         /** Bojenje Save dugmeta u odnosu na to da li se ceka odgovor servera.
          * @param {boolean} isWorking
         */
         function Saving(isWorking) {
-            btnSaveFile.style.backgroundColor = isWorking ? 'red' : 'black';
+            btnSaveFile.style.backgroundColor = isWorking ? 'red' : 'lightgrey';
         }
 
         function CmbFileNameChange() {
@@ -83,7 +84,7 @@
             <td>
                 <select id="cmbFileName" autofocus onchange="CmbFileNameChange();">
                     <option>---</option>
-                    <option>/dat/lighting.ini</option>
+                    <option>/dat/config.ini</option>
                     <option>/dat/channels.csv</option>
                     <option>/dat/tags.csv</option>
                 </select>
