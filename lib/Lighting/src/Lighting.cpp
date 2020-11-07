@@ -13,7 +13,7 @@ void Lighting::getCurrentTime()
     msTimeSet = millis();
 }
 
-void Lighting::init(bool on, int startHour, int startMin, int endHour, int endMin, int devMin)
+void Lighting::init(bool on, int lightLevel, int startHour, int startMin, int endHour, int endMin, int devMin)
 {
     if (!on)
         return;
@@ -21,6 +21,7 @@ void Lighting::init(bool on, int startHour, int startMin, int endHour, int endMi
     randomSeed(analogRead(0));
     this->isSystemOn = on;
     this->isLightOn = false;
+    this->lightLevel = lightLevel;
     this->startMin = startHour * 60 + startMin;
     this->endMin = endHour * 60 + endMin;
     this->devMin = devMin;

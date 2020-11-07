@@ -22,7 +22,10 @@ enum NecCode
     ArrowRight = 0x20DF609F,
 
     ColorGreen = 0x20DF8E71,
+    MediumLightOn = 0x20DF8E17,
     ColorYellow = 0x20DFC639,
+    HighLightOn = 0x20DFC693,
+    LightOff = 0x20DFC6FB,
     ColorRed = 0x20DF4EB1,
     ColorBlue = 0x20DF8679,
 };

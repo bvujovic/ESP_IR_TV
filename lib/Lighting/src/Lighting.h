@@ -11,6 +11,8 @@ private:
     bool isSystemOn = false;
     // Da li je svetlo trenutno upaljeno ili ne.
     bool isLightOn = false;
+    // Nivo/jacina svetla. 2 - srednje, 3 - jako
+    int lightLevel;
     // U kom minutu u danu se svetlo pali. Primer: 20:30 -> 20*60 + 30
     int startMin;
     // U kom minutu u danu se svetlo gase. Primer: 01:15 -> 1*60 + 15
@@ -32,7 +34,9 @@ private:
 public:
     // Inicijalizacija objekta vrednostima: da li automatski ON-OFF svetla aktivan, kada se svetlo pali, a kada gasi.
     // Samo ova metoda moze da promeni: isSystemOn, startMin, endMin, devMin.
-    void init(bool on, int startHour, int startMin, int endHour, int endMin, int devMin);
+    void init(bool on, int level, int startHour, int startMin, int endHour, int endMin, int devMin);
     // 1 treba upaliti svetlo, -1 treba ugasiti svetlo, 0 nista ne ciniti
     int refresh();
+    // Nivo/jacina svetla. 2 - srednje, 3 - jako
+    int getLightLevel() { return lightLevel; }
 };

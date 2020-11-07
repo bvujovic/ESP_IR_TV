@@ -166,10 +166,17 @@ void handleAction()
     irsend.sendNEC(VolDown);
   if (cmd == "colorRed")
     irsend.sendNEC(ColorRed);
-  if (cmd == "colorGreen")
+  if (cmd == "colorGreen") // ON/OFF srednjeg svetla
     irsend.sendNEC(ColorGreen);
-  if (cmd == "colorYellow")
+  if (cmd == "colorYellow") // ON/OFF jakog svetla
     irsend.sendNEC(ColorYellow);
+  // posebne komande za paljenje i gasenje svetla (nema na daljincu)
+  if (cmd == "mediumLightOn") // ON srednjeg svetla
+    irsend.sendNEC(MediumLightOn);
+  if (cmd == "highLightOn") // ON jakog svetla
+    irsend.sendNEC(HighLightOn);
+  if (cmd == "lightOff") // OFF svetla
+    irsend.sendNEC(LightOff);
 
   if (cmd == "guide")
   {
@@ -224,7 +231,8 @@ void loadConfigIni()
   // subtitles
   subs.parseChannels(ei.getString("subtitles"));
   // lighing
-  lighting.init(ei.getInt("absentLightOn"), ei.getInt("absentLightStartHour"), ei.getInt("absentLightStartMin"),
+  lighting.init(ei.getInt("absentLightOn"), ei.getInt("absentLightLevel"),
+                ei.getInt("absentLightStartHour"), ei.getInt("absentLightStartMin"),
                 ei.getInt("absentLightEndHour"), ei.getInt("absentLightEndMin"), ei.getInt("absentLightTimeDev"));
   ei.close();
 }
@@ -305,7 +313,13 @@ void loop()
 
   int l = lighting.refresh();
   if (l == 1) // pali svetlo
-    irsend.sendNEC(ColorGreen);
+  {
+    if (lighting.getLightLevel() == 3)
+      irsend.sendNEC(NecCode::HighLightOn);
+    if (lighting.getLightLevel() == 2)
+      irsend.sendNEC(NecCode::MediumLightOn);
+  }
+
   if (l == -1) // gasi svetlo
-    irsend.sendNEC(ColorGreen);
+    irsend.sendNEC(NecCode::LightOff);
 }
