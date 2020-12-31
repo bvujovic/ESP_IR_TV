@@ -299,7 +299,14 @@ var chId, chNum;
 
 function openTagsPopup() {
     const id = chId.substring(2);
-    ch = chans[id];
+    if (!loadSelectedChannels)
+        ch = chans[id];
+    else {
+        for (i = 0; i < chans.length; i++)
+            if (chans[i].id == id)
+                ch = chans[i];
+    }
+    console.log(ch);
     chNum = ch.number;
     const tagIDs = TagIDsForChan(chNum);
     document.getElementById('frmTagsSel').style.display = 'block';

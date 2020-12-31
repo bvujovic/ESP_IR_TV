@@ -257,11 +257,12 @@ void handleSaveTextFile()
   LittleFsUtils::WriteFile(textFileName, server.arg("plain"));
   server.send(200, "text/plain", "");
 
-  // ako je izmenjen config.ini, a lighting nije ukljucen - ESP se ne mora resetovati
-  if (textFileName.indexOf("config.ini") >= 0 && server.arg("plain").indexOf("absentLightOn=0") >= 0)
-    loadConfigIni();
-  else
-    ESP.reset();
+  //B
+  // // ako je izmenjen config.ini, a lighting nije ukljucen - ESP se ne mora resetovati
+  // if (textFileName.indexOf("config.ini") >= 0 && server.arg("plain").indexOf("absentLightOn=0") >= 0)
+  //   loadConfigIni();
+  // else
+  ESP.reset();
 }
 
 void setup()
