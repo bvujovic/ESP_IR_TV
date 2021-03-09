@@ -44,7 +44,6 @@ function CmpChanId(a, b) {
 }
 
 function send(cmd) {
-    //T console.log('send: ' + cmd);
     if (cmd == '')
         return;
     if (cmd == 'onOff' && !confirm('Are you sure?'))
@@ -301,12 +300,12 @@ function openTagsPopup() {
     const id = chId.substring(2);
     if (!loadSelectedChannels)
         ch = chans[id];
-    else {
+    else { // kada se prikazuju selected kanali, njihov raspored je izmenjen tako da se
+        // ne mogu osloniti na id kao indeks kanala
         for (i = 0; i < chans.length; i++)
             if (chans[i].id == id)
                 ch = chans[i];
     }
-    console.log(ch);
     chNum = ch.number;
     const tagIDs = TagIDsForChan(chNum);
     document.getElementById('frmTagsSel').style.display = 'block';
@@ -337,6 +336,7 @@ function confirmTagsPopup() {
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", "/setTags", true);
     xhttp.setRequestHeader("Content-type", "text/plain");
-    xhttp.send(tags.join(sepRows));
+    //B xhttp.send(tags.join(sepRows));
+    xhttp.send(tags.map(e => e.ToString()).join(sepRows));
     closeTagsPopup();
 }

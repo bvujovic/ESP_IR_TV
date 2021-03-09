@@ -25,8 +25,10 @@ Lighting lighting;
 const uint pinLed = LED_BUILTIN;
 const uint itvShortDelay = 50;      // pauza izmedju 2 uzastopna signala
 const uint itvLongDelay = 200;      // dodatna pauza izmedju 2 uzastopna signala kada su susedne cifre iste
+const uint itvSubtitles = 5000;     // vreme (u ms) koje treba da prodje od promene kanala do aktiviranja Subtitles
 uint cntChannels;                   // broj TV kanala koji se pamte u nizu channels
 bool guideLastAct = false;          // da li je poslednja akcija klik na GUIDE
+ulong msSubtitles = 0;              // vreme aktiviranja Subtitle opcije. 0 - ne traze se titlovi za kanal
 const char *CH_PREFIX = "ch";       // komanda za promenu kanala ima ovaj prefiks
 const char *SEL_CH_SUFFIX = "_sel"; // komanda koja stavlja kanal u selektovane ima ovaj sufiks
 
@@ -86,14 +88,16 @@ void handleGetTags()
 void handleSetTags()
 {
   LittleFsUtils::WriteFile(TAGS_INI, server.arg("plain"));
-  server.send(200, "text/plain", "");
+  //B server.send(200, "text/plain", "");
+  SendEmptyText(server);
 }
 
 void handleChanSelMoveUp()
 {
   String idxChan = server.arg("idxChan");
   Channel::ChannelSelMoveUp(channels, cntChannels, idxChan.toInt());
-  server.send(200, "text/plain", "");
+  //B server.send(200, "text/plain", "");
+  SendEmptyText(server);
 }
 
 // test json
@@ -153,7 +157,11 @@ long *IRcodes(short chNumber, bool spin)
 void handleAction()
 {
   String cmd = server.arg("cmd");
-  Serial.println(cmd);
+  //T Serial.println(cmd);
+
+  // sve komande osim ovde izuzetih znace otkazivanje Subtitles opcije
+  if (cmd != "mute" && !cmd.startsWith("vol") && !cmd.startsWith("color") && cmd.indexOf("light") == -1 && !cmd.endsWith(SEL_CH_SUFFIX))
+    msSubtitles = 0;
 
   // gornji deo daljinskog
   if (cmd == "onOff")
@@ -209,20 +217,14 @@ void handleAction()
       Serial.println(channels[idx].ToString());
       sendIRcodes(IRcodes(channels[idx].number, channels[idx].spin));
 
-      //B if (channels[idx].number == 217) // test Subtitle opcije za ID (ubistva) kanal
+      //T if (channels[idx].number == 217) // test Subtitle opcije za ID (ubistva) kanal
       if (subs.forChannel(channels[idx].number))
-      {
-        delay(5000);
-        irsend.sendNEC(Subtitle);
-        delay(itvLongDelay);
-        irsend.sendNEC(Subtitle);
-        delay(itvLongDelay);
-        irsend.sendNEC(Ok);
-      }
+        msSubtitles = millis();
     }
   }
 
-  server.send(200, "application/json", "{}");
+  //B server.send(200, "application/json", "{}");
+  SendEmptyText(server);
 }
 
 void loadConfigIni()
@@ -255,7 +257,8 @@ void handleLoadTextFile()
 void handleSaveTextFile()
 {
   LittleFsUtils::WriteFile(textFileName, server.arg("plain"));
-  server.send(200, "text/plain", "");
+  //B server.send(200, "text/plain", "");
+  SendEmptyText(server);
 
   //B
   // // ako je izmenjen config.ini, a lighting nije ukljucen - ESP se ne mora resetovati
@@ -306,6 +309,16 @@ void setup()
 void loop()
 {
   delay(10);
+
+  if (msSubtitles != 0 && millis() - msSubtitles > itvSubtitles)
+  {
+    msSubtitles = 0;
+    irsend.sendNEC(Subtitle);
+    delay(itvLongDelay);
+    irsend.sendNEC(Subtitle);
+    delay(itvLongDelay);
+    irsend.sendNEC(Ok);
+  }
 
   if (isOtaOn)
     ArduinoOTA.handle();
