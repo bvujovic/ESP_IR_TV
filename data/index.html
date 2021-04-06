@@ -7,7 +7,8 @@
     <link rel="icon" href="inc/blue_remote_512.png" type="image/png" />
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link href="inc/style.css" rel="stylesheet" type="text/css">
-    <script onload='Tag.GetTags(); getChannels();' src="inc/script.js" type="text/javascript" language="JavaScript"></script>
+    <script onload='Tag.GetTags(); getChannels();' src="inc/script.js" type="text/javascript"
+        language="JavaScript"></script>
 </head>
 
 <body>
@@ -45,6 +46,7 @@
                 <input type='checkbox' id='sport' /> <label for='sport'>Sport</label> </br>
             </div>
             <div id='frmTagsFooter'>
+                Turn here in <input type='number' style='width:40px;' id='turnLater' min='0'> min</br>
                 <button type='button' class='frmTagsBtn' onclick='confirmTagsPopup()'>Ok</button>
                 <button type='button' class='frmTagsBtn' onclick='closeTagsPopup()'>Cancel</button>
             </div>

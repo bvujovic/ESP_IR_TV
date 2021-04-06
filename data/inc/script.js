@@ -336,7 +336,8 @@ function confirmTagsPopup() {
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", "/setTags", true);
     xhttp.setRequestHeader("Content-type", "text/plain");
-    //B xhttp.send(tags.join(sepRows));
     xhttp.send(tags.map(e => e.ToString()).join(sepRows));
+    xhttp.open("GET", "/turnLater?min=" + turnLater.value + "&ch=" + chNum, true);
+    xhttp.send(str);
     closeTagsPopup();
 }

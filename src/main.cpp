@@ -88,7 +88,6 @@ void handleGetTags()
 void handleSetTags()
 {
   LittleFsUtils::WriteFile(TAGS_INI, server.arg("plain"));
-  //B server.send(200, "text/plain", "");
   SendEmptyText(server);
 }
 
@@ -96,7 +95,23 @@ void handleChanSelMoveUp()
 {
   String idxChan = server.arg("idxChan");
   Channel::ChannelSelMoveUp(channels, cntChannels, idxChan.toInt());
-  //B server.send(200, "text/plain", "");
+  SendEmptyText(server);
+}
+
+ulong msTurnLater;      // Vreme kada treba prebaciti na kanal chTurnLater.
+short chTurnLater = -1; // Broj kanala na koji treba kasnije prebaciti.
+
+// Prebacivanje na zadati kanal za x minuta.
+void handleTurnLater()
+{
+  float min = server.arg("min").toFloat();
+  if (min == 0)
+    chTurnLater = -1;
+  else
+  {
+    msTurnLater = millis() + min * 60 * 1000;
+    chTurnLater = server.arg("ch").toInt();
+  }
   SendEmptyText(server);
 }
 
@@ -107,7 +122,7 @@ void handleTest()
   server.send(200, "application/json", "{ 'app': 'ESP_IR_TV' }");
 }
 
-// slanje IR kodova ka TVu
+// Slanje IR kodova ka TVu.
 void sendIRcodes(long *codes)
 {
   for (short i = 0; codes[i] != 0; i++)
@@ -122,7 +137,7 @@ void sendIRcodes(long *codes)
 
 // Vraca niz kodova potrebnih za prebacivanje na dati kanal (chNumber) sa datim spinom.
 // Poslednji kôd ce imati vrednost 0.
-long *IRcodes(short chNumber, bool spin)
+long *irCodes(short chNumber, bool spin)
 {
   long codes[10];
   codes[0] = 0x20DF08F7;
@@ -151,6 +166,14 @@ long *IRcodes(short chNumber, bool spin)
   a[len - 2] = codeOK;
   a[len - 1] = 0;
   return a;
+}
+
+// Prebacivanje na kanal sa datim brojem.
+void turnTo(short chNum)
+{
+  sendIRcodes(irCodes(chNum, false));
+  if (subs.forChannel(chNum))
+    msSubtitles = millis();
 }
 
 // Akcija daljinskog (act)
@@ -214,16 +237,11 @@ void handleAction()
         delay(itvLongDelay);
       }
       int idx = ch.toInt();
-      Serial.println(channels[idx].ToString());
-      sendIRcodes(IRcodes(channels[idx].number, channels[idx].spin));
-
-      //T if (channels[idx].number == 217) // test Subtitle opcije za ID (ubistva) kanal
-      if (subs.forChannel(channels[idx].number))
-        msSubtitles = millis();
+      //T Serial.println(channels[idx].ToString());
+      turnTo(channels[idx].number);
     }
   }
 
-  //B server.send(200, "application/json", "{}");
   SendEmptyText(server);
 }
 
@@ -257,7 +275,6 @@ void handleLoadTextFile()
 void handleSaveTextFile()
 {
   LittleFsUtils::WriteFile(textFileName, server.arg("plain"));
-  //B server.send(200, "text/plain", "");
   SendEmptyText(server);
 
   //B
@@ -295,6 +312,7 @@ void setup()
   server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
   server.on("/otaUpdate", []() { server.send(200, "text/plain", "ESP is waiting for OTA updates..."); isOtaOn = true; ArduinoOTA.begin(); });
   server.on("/chanSelMoveUp", handleChanSelMoveUp);
+  server.on("/turnLater", handleTurnLater);
   server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
   server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
@@ -318,6 +336,12 @@ void loop()
     irsend.sendNEC(Subtitle);
     delay(itvLongDelay);
     irsend.sendNEC(Ok);
+  }
+
+  if (chTurnLater != -1 && millis() > msTurnLater)
+  {
+    turnTo(chTurnLater);
+    chTurnLater = -1;
   }
 
   if (isOtaOn)
