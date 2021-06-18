@@ -89,9 +89,19 @@ function send(cmd) {
             }
         }
     }
-    const itv = cmd.startsWith('ch') && !cmd.endsWith('_sel') ? 300 : 0;
-    setTimeout(httpGet, itv, cmd);
+    if (cmd == 'back')
+        cntBack++;
+    var itv = 0;
+    if (cmd.startsWith('ch') && !cmd.endsWith('_sel') || cmd == 'back' && cntBack == 1)
+        itv = 300;
+
+    if (cmd == 'back' && cntBack > 1)
+        httpGet('back2');
+    else
+        setTimeout(httpGet, itv, cmd);
 }
+
+var cntBack = 0; // broj klikova na Back dugme
 
 // Komanda se salje veb serveru iz httpGet() samo ako je ovo 0.
 // Dblclick ovo postavlja na 2 da se sledeca dva poziva httpGet() neutralisala tako da samo izleti popup.
@@ -101,10 +111,17 @@ function httpGet(cmd) {
     if (cancelSend > 0)
         cancelSend--;
     else {
+        if (cmd == 'back') {
+            const d = cntBack;
+            cntBack = 0; // ova funkcija pozvana za back komandu resetuje brojac cntBack...
+            if (d > 1)   // a za dupli/visestruki klik na back dugme - ne salje back jer je vec poslato back2
+                return;
+        }
+
         url = 'act?cmd=' + cmd;
         var x = new XMLHttpRequest();
         x.open('GET', url, true);
-        x.send(null);
+        x.send();
     }
 }
 
@@ -328,9 +345,11 @@ function TagsChansUpdate() {
     const btn = document.getElementById(chId);
     btn.value = TagsForChan(chNum);
 }
+
 function closeTagsPopup() {
     document.getElementById('frmTagsSel').style.display = 'none';
 }
+
 function confirmTagsPopup() {
     TagsChansUpdate();
     var xhttp = new XMLHttpRequest();
@@ -338,6 +357,6 @@ function confirmTagsPopup() {
     xhttp.setRequestHeader("Content-type", "text/plain");
     xhttp.send(tags.map(e => e.ToString()).join(sepRows));
     xhttp.open("GET", "/turnLater?min=" + turnLater.value + "&ch=" + chNum, true);
-    xhttp.send(str);
+    xhttp.send();
     closeTagsPopup();
 }

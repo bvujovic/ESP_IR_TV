@@ -17,6 +17,7 @@ EasyINI ei("/dat/config.ini");
 Subtitles subs;
 #include "Lighting.h"
 Lighting lighting;
+#include <EasyFS.h>
 
 #include "UpdateCSV.h"
 #include "Channel.h"
@@ -168,9 +169,20 @@ long *irCodes(short chNumber, bool spin)
   return a;
 }
 
+short chNumPrev = -1; // prethodni broj kanala
+short chNumCurr = -1; // tekuci broj kanala
+
+// Pamcenje tekuceg kanala kao prethodnog i novog kao tekuceg.
+void pushToPrev(short chNum)
+{
+  chNumPrev = chNumCurr;
+  chNumCurr = chNum;
+}
+
 // Prebacivanje na kanal sa datim brojem.
 void turnTo(short chNum)
 {
+  pushToPrev(chNum);
   sendIRcodes(irCodes(chNum, false));
   if (subs.forChannel(chNum))
     msSubtitles = millis();
@@ -180,10 +192,10 @@ void turnTo(short chNum)
 void handleAction()
 {
   String cmd = server.arg("cmd");
-  //T Serial.println(cmd);
+  //T EasyFS::addf(cmd);
 
   // sve komande osim ovde izuzetih znace otkazivanje Subtitles opcije
-  if (cmd != "mute" && !cmd.startsWith("vol") && !cmd.startsWith("color") && cmd.indexOf("light") == -1 && !cmd.endsWith(SEL_CH_SUFFIX))
+  if (cmd != "mute" && !cmd.startsWith("vol") && !cmd.startsWith("color") && !cmd.startsWith("back") && cmd.indexOf("light") == -1 && !cmd.endsWith(SEL_CH_SUFFIX))
     msSubtitles = 0;
 
   // gornji deo daljinskog
@@ -218,6 +230,8 @@ void handleAction()
     irsend.sendNEC(ArrowRight);
   if (cmd == "back")
     irsend.sendNEC(Back);
+  if (cmd == "back2" && chNumPrev != -1)
+    turnTo(chNumPrev);
 
   if (cmd.startsWith(CH_PREFIX)) // kanali
   {
@@ -291,7 +305,7 @@ void setup()
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, false);
 
-  LittleFS.begin();
+  EasyFS::setFileName("/dat/msgs.log");
 
   WiFi.mode(WIFI_STA);
   ConnectToWiFi();
@@ -304,19 +318,32 @@ void setup()
   server.on("/getChannels", handleGetChannels);
   server.on("/getTags", handleGetTags);
   server.on("/setTags", handleSetTags);
-  server.on("/downloadCSV", []() { UpdateCSV::HandleDownloadCSV(server); });
-  server.on("/uploadCSV", []() { UpdateCSV::HandleUploadCSV(server); });
+  server.on("/downloadCSV", []()
+            { UpdateCSV::HandleDownloadCSV(server); });
+  server.on("/uploadCSV", []()
+            { UpdateCSV::HandleUploadCSV(server); });
   server.on("/loadTextFile", handleLoadTextFile);
   server.on("/saveTextFile", handleSaveTextFile);
-  server.on("/edit", []() { HandleDataFile(server, "/text_editor.html", "text/html"); });
-  server.on("/admin", []() { HandleDataFile(server, "/admin.html", "text/html"); });
-  server.on("/otaUpdate", []() { server.send(200, "text/plain", "ESP is waiting for OTA updates..."); isOtaOn = true; ArduinoOTA.begin(); });
+  server.on("/edit", []()
+            { HandleDataFile(server, "/text_editor.html", "text/html"); });
+  server.on("/admin", []()
+            { HandleDataFile(server, "/admin.html", "text/html"); });
+  server.on("/otaUpdate", []()
+            {
+              server.send(200, "text/plain", "ESP is waiting for OTA updates...");
+              isOtaOn = true;
+              ArduinoOTA.begin();
+            });
   server.on("/chanSelMoveUp", handleChanSelMoveUp);
   server.on("/turnLater", handleTurnLater);
-  server.on("/", []() { HandleDataFile(server, "/index.html", "text/html"); });
-  server.on("/inc/style.css", []() { HandleDataFile(server, "/inc/style.css", "text/css"); });
-  server.on("/inc/script.js", []() { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
-  server.on("/inc/blue_remote_512.png", []() { HandleDataFile(server, "/inc/blue_remote_512.png", "image/png"); });
+  server.on("/", []()
+            { HandleDataFile(server, "/index.html", "text/html"); });
+  server.on("/inc/style.css", []()
+            { HandleDataFile(server, "/inc/style.css", "text/css"); });
+  server.on("/inc/script.js", []()
+            { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
+  server.on("/inc/blue_remote_512.png", []()
+            { HandleDataFile(server, "/inc/blue_remote_512.png", "image/png"); });
   server.begin();
   Serial.println("HTTP server started");
   initChannels();
