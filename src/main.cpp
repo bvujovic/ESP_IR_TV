@@ -23,13 +23,15 @@ Lighting lighting;
 #include "Channel.h"
 #include <LittleFsUtils.h>
 
+typedef unsigned int uint;
+
 const uint pinLed = LED_BUILTIN;
 const uint itvShortDelay = 50;      // pauza izmedju 2 uzastopna signala
 const uint itvLongDelay = 200;      // dodatna pauza izmedju 2 uzastopna signala kada su susedne cifre iste
 const uint itvSubtitles = 5000;     // vreme (u ms) koje treba da prodje od promene kanala do aktiviranja Subtitles
 uint cntChannels;                   // broj TV kanala koji se pamte u nizu channels
 bool guideLastAct = false;          // da li je poslednja akcija klik na GUIDE
-ulong msSubtitles = 0;              // vreme aktiviranja Subtitle opcije. 0 - ne traze se titlovi za kanal
+uint msSubtitles = 0;               // vreme aktiviranja Subtitle opcije. 0 - ne traze se titlovi za kanal
 const char *CH_PREFIX = "ch";       // komanda za promenu kanala ima ovaj prefiks
 const char *SEL_CH_SUFFIX = "_sel"; // komanda koja stavlja kanal u selektovane ima ovaj sufiks
 
@@ -99,7 +101,7 @@ void handleChanSelMoveUp()
   SendEmptyText(server);
 }
 
-ulong msTurnLater;      // Vreme kada treba prebaciti na kanal chTurnLater.
+uint msTurnLater;       // Vreme kada treba prebaciti na kanal chTurnLater.
 short chTurnLater = -1; // Broj kanala na koji treba kasnije prebaciti.
 
 // Prebacivanje na zadati kanal za x minuta.
@@ -175,8 +177,11 @@ short chNumCurr = -1; // tekuci broj kanala
 // Pamcenje tekuceg kanala kao prethodnog i novog kao tekuceg.
 void pushToPrev(short chNum)
 {
-  chNumPrev = chNumCurr;
-  chNumCurr = chNum;
+  if (chNum != chNumCurr)
+  {
+    chNumPrev = chNumCurr;
+    chNumCurr = chNum;
+  }
 }
 
 // Prebacivanje na kanal sa datim brojem.
@@ -204,9 +209,17 @@ void handleAction()
   if (cmd == "mute")
     irsend.sendNEC(Mute);
   if (cmd == "volUp")
+  {
     irsend.sendNEC(VolUp);
+    delay(itvLongDelay);
+    irsend.sendNEC(VolUp);
+  }
   if (cmd == "volDown")
+  {
     irsend.sendNEC(VolDown);
+    delay(itvLongDelay);
+    irsend.sendNEC(VolDown);
+  }
   if (cmd == "colorRed")
     irsend.sendNEC(ColorRed);
   if (cmd == "colorGreen") // ON/OFF srednjeg svetla
@@ -305,10 +318,11 @@ void setup()
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, false);
 
-  EasyFS::setFileName("/dat/msgs.log");
+  EasyFS::setFileName("/dat/msgs.log"); // http://192.168.0.20/loadTextFile?name=dat/msgs.log
 
   WiFi.mode(WIFI_STA);
-  ConnectToWiFi();
+  if (!ConnectToWiFi())
+    ESP.deepSleep(5 * 60 * 1000); // cekanje/spavanje 5min da ruter ozivi posle dolaska struje npr.
   UpdateCSV::DownloadNewCsvIN();
   UpdateCSV::UploadNewCsvIN();
   loadConfigIni();

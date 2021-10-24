@@ -1,62 +1,66 @@
 001|N1 HD
 002|RTS 1 HD
 003|Pink
-004|O2.TV
-005|Happy
+004|B92
+005|Happy TV
 006|Prva
-007|Prva plus
-008|Nova S HD
-009|VAVOOM HD
-010|Cinemania
+007|Prva Plus
+008|Shoppster
+009|Vavoom HD
+010|Cinemania HD
 011|Grand
 012|IDJTV HD
-013|Brainz
+013|Brainz HD
 014|Prva World
 015|Prva Kick
 018|RTS 2 HD
-019|RTS 3
+019|RTS 3 HD
 020|RTV 1
 021|RTV 2
-022|Pink 2
-023|Pink 3 Info
+022|Red TV
+023|Vesti
 024|Studio B
 025|Naša TV
-026|BK TV HD
 028|K::CN 1
-029|Palma Plus
+029|Palma plus
+031|Super SAT TV
 040|HRT 1
 041|HRT 2
-042|Nova TV
+042|Nova HR
 043|RTL Croatia World
-045|N1 (HR) HD
+044|RTL Televizija
+045|N1 HR HD
 047|Nova BH HD
-049|N1 (BH) HD
-051|Federalna TV
-053|TV1
+049|N1 BH HD
+053|O kanal
 057|Nova M HD
 058|A1
 059|RTCG Sat
-072|FOX
+072|FOX HD
 073|FOX Life HD
-074|FOX Crime
-075|FOX Movies
+074|FOX Crime HD
+075|FOX Movies HD
 076|Epic Drama HD
 077|AXN
 078|Diva
 079|TV1000
 080|AMC HD
-081|Comedy Central Extra
+081|Pickbox
 082|Pink Family
 083|Pink Action
-084|HD Cinestar TV Comedy & Family
-085|CineStar TV
-087|Cinestar TV Action&Thriller
+084|CineStar Comedy
+085|CineStar TV 1
+086|CineStar Fantasy
+087|CineStar Action
+090|CineStar TV 2
 091|Pink Western
 110|Nova Sport HD
 111|SK 1 HD
 112|SK 2 HD
 113|SK 3 HD
-122|SK Golf HD
+121|SK 4K
+122|SK HD
+125|SK Golf HD
 126|Fight Channel
 130|Eurosport 1 HD
 131|Eurosport 2 HD
@@ -65,46 +69,50 @@
 160|Pikaboo HD
 161|Minimax
 163|Nickelodeon
-165|Disney
+165|Disney Channel
 166|Cartoon Network
 167|Pink Kids
+168|Disney Junior
 170|Nick Jr.
+172|Nicktoons
+173|IDJ Kids
 174|BabyTV
-180|National Geographic
-181|Discovery
+180|National Geographic HD
+181|Discovery HD
 182|History HD
-183|Viasat Explore
-187|Lov i ribolov
-188|Animal Planet
+183|Viasat Explore HD
+187|Lov i Ribolov
+188|Animal Planet HD
 189|Viasat Nature
-192|Viasat History
+192|Viasat History HD
 195|ID
 196|CBS Reality
-208|Animal Planet HD
-216|Crime & Investigation
 217|ID HD
 220|24Kitchen HD
 221|TLC
 222|E! Entertainment
 223|FTV HD
 224|Travel Channel
-226|Fine Living
+226|HGTV
 231|Travel Channel HD
 241|Grand 2
+243|K::CN 2
+244|K::CN 3
 245|Pink Music
-246|CMC
+246|CMC TV
 249|MTV
-250|VH1 Europe
+250|MTV00s
 251|Trace Urban HD
 270|CNN
 271|BBC World News
 272|RT
-273|EuroNews
+273|Euronews
 275|Bloomberg
 276|Al Jazeera Balkans
 277|CGTN
+278|CCTV 4
 280|Rai Uno
-281|Rai Due
+281|Mediaset Italia
 283|Channel One Russia
 286|RTL
 287|Deutsche Welle
@@ -114,49 +122,54 @@
 297|M1 HD
 298|M2 HD
 299|M5 HD
+300|M4 Sport HD
 305|Romania International
 340|TV Most
 341|Novosadska TV
-342|Kanal 9
-343|RTV Delta
+342|TV K9
+343|TV Delta
 344|KTV Zrenjanin
-346|K23
+346|TV K23
 347|Pannon
 348|TV Subotica
-349|TV YuEco
-350|TV IKS
+349|TV YU Eco
 353|TV Santos
+360|TV Sombor
 370|TV Pančevo
 390|TV Vujić
+391|VA Plus
+392|TV Marš
 395|Sat TV
-400|RTV Novi Pazar
+401|TV Šabac
 405|TV Kragujevac
 425|TV 5 Užice
 440|TV Belle Amie
-441|Banker
-442|Nais
-443|Zona Plus
+441|Niška TV
+443|TV Zona Plus
+455|TV Melos
 470|TV Leskovac
-472|Protokol K-1
-490|SOS kanal Plus
-700|S1
-701|JAT
-702|Naxi
+471|TV Studio
+472|TV K-1
+480|RTV Novi Pazar
+490|SOS kanal plus
+999|SBB Info kanal
+700|Radio S1
+701|Radio JAT
+702|Radio Naxi
 703|Hit Music FM
 704|Radio Novosti
 707|Radio S3
-708|Pink
-713|Laguna
+708|Radio Pink
+713|Radio Laguna
 714|Radio Studio B
-715|Radio Novi Sad
+715|Radio NS 1
 720|Radio S2
 721|Radio S4
-722|TDI
-723|Play radio
-724|AS FM
+722|Radio TDI
+723|Play Radio
+724|Radio AS FM
 725|Radio Top FM
 729|Rock Radio
-730|Karolina
-731|Nostalgie Radio
-740|S Kids
-999|Info kanal
+730|Radio Karolina
+731|Radio Nostalgie
+740|Radio S Kids
