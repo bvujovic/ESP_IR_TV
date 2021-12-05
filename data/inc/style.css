@@ -18,7 +18,7 @@ header button { margin: 0 1px 1px 0; width: calc(33.33% - 1px); height: 33.33%; 
 #main div button:disabled { color: #000 }
 #main div :last-child { width: 20%; }
 footer { position: absolute; bottom: 5px; left: 0; height: 30px; width: 100%; }
-footer button { width: 50%; height: 50%; height: 100%; }
+footer button { width: 33.33%; height: 50%; height: 100%; }
 footer button:active { opacity: 0.75 }
 #colorRed { background-color: red; }
 #colorGreen { background-color: green; }

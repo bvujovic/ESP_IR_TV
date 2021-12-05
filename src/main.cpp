@@ -220,7 +220,7 @@ void handleAction()
     delay(itvLongDelay);
     irsend.sendNEC(VolDown);
   }
-  if (cmd == "colorRed")
+  if (cmd == "colorRed") // ON/OFF Bunny Alarm (poseban aparat/projekat)
     irsend.sendNEC(ColorRed);
   if (cmd == "colorGreen") // ON/OFF srednjeg svetla
     irsend.sendNEC(ColorGreen);
