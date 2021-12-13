@@ -282,7 +282,7 @@ function FormatBtnSelOrder() {
 function displayChannels() {
     var s = loadSelectedChannels ?
         "<button id='btnSelOrder' class='aboveChannels' onclick='btnSelOrderClick();'>Click to Reorder</button>" :
-        "<input type='text' id='search' class='aboveChannels' autocomplete='off' onkeyup='chSearch(this.value);' onclick='clearVal(this); chSearch(this.value)' placeholder='Search' />";
+        "<input type='text' id='search' class='aboveChannels' autocomplete='off' onkeyup='chSearch(this.value);' onclick='clearVal(this); chSearch(this.value)' placeholder='Search' ondblclick='window.location.href = \"/admin\"' />";
     if (loadSelectedChannels)
         chans.sort(CmpChanIdxSel);
     else

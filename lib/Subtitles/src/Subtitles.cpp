@@ -4,9 +4,9 @@ void Subtitles::parseChannels(String s)
 {
     // EG s="217,111", s="217, 111;123"
     char strNum[5]; // char* bafer za tekuci broj tj. kanal
-    uint j = 0;     // brojac za strNum
+    unsigned int j = 0;     // brojac za strNum
     channels.clear();
-    for (uint i = 0; i < s.length(); i++)
+    for (unsigned int i = 0; i < s.length(); i++)
     {
         if (isdigit(s[i]))
             strNum[j++] = s[i];

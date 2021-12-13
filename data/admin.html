@@ -8,19 +8,20 @@
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link href="inc/style.css" rel="stylesheet" type="text/css">
     <style>
-        * {
-            color: #fff;
-        }
-
+        * { color: #fff; }
         a {
             display: block;
             margin-left: 15px;
         }
+        h2 { margin-bottom: 0; }
     </style>
 </head>
 
 <body>
     <h1>Admin Panel</h1>
+    <p>
+        <a href="/">Home</a>
+    </p>
 
     <h2>Download - web to ESP</h2>
     <a href="/downloadCSV?fileName=channels.csv">Download Channels</a>
@@ -29,6 +30,9 @@
     <h2>Upload - ESP to web</h2>
     <a href="/uploadCSV?fileName=channels.csv">Upload Channels</a>
     <a href="/uploadCSV?fileName=tags.csv">Upload Tags</a>
+
+    <h2>Edit files</h2>
+    <a href="/edit">Edit ini/csv files</a>
 
     <h2>OTA Update</h2>
     <a href="/otaUpdate">Start OTA Updates</a>

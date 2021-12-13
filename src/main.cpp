@@ -29,7 +29,7 @@ const uint pinLed = LED_BUILTIN;
 const uint itvShortDelay = 50;      // pauza izmedju 2 uzastopna signala
 const uint itvLongDelay = 200;      // dodatna pauza izmedju 2 uzastopna signala kada su susedne cifre iste
 const uint itvSubtitles = 5000;     // vreme (u ms) koje treba da prodje od promene kanala do aktiviranja Subtitles
-uint cntChannels;                   // broj TV kanala koji se pamte u nizu channels
+uint cntChannels = 0;               // broj TV kanala koji se pamte u nizu channels
 bool guideLastAct = false;          // da li je poslednja akcija klik na GUIDE
 uint msSubtitles = 0;               // vreme aktiviranja Subtitle opcije. 0 - ne traze se titlovi za kanal
 const char *CH_PREFIX = "ch";       // komanda za promenu kanala ima ovaj prefiks
@@ -39,6 +39,10 @@ Channel *channels;
 
 void initChannels()
 {
+  //TODO zapamtiti koji su kanali bili selektovani (idxSelected>0) i kasnije ih ponovo postaviti u nizu
+  if (cntChannels > 0) // ako se ova funkcija zove drugi, treci put... i kanali su vec popunjeni
+    free(channels);
+
   File fp = LittleFS.open("/dat/channels.csv", "r");
   cntChannels = 0;
 
@@ -302,14 +306,9 @@ void handleLoadTextFile()
 void handleSaveTextFile()
 {
   LittleFsUtils::WriteFile(textFileName, server.arg("plain"));
+  loadConfigIni();
+  initChannels();
   SendEmptyText(server);
-
-  //B
-  // // ako je izmenjen config.ini, a lighting nije ukljucen - ESP se ne mora resetovati
-  // if (textFileName.indexOf("config.ini") >= 0 && server.arg("plain").indexOf("absentLightOn=0") >= 0)
-  //   loadConfigIni();
-  // else
-  ESP.reset();
 }
 
 void setup()
