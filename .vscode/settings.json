@@ -3,6 +3,11 @@
         "*.tcc": "cpp",
         "fstream": "cpp",
         "iostream": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "atomic": "cpp",
+        "memory": "cpp",
+        "istream": "cpp",
+        "streambuf": "cpp",
+        "utility": "cpp"
     }
 }

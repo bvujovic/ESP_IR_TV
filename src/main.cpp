@@ -17,7 +17,7 @@ EasyINI ei("/dat/config.ini");
 Subtitles subs;
 #include "Lighting.h"
 Lighting lighting;
-#include <EasyFS.h>
+// #include <EasyFS.h>
 
 #include "UpdateCSV.h"
 #include "Channel.h"
@@ -85,16 +85,16 @@ void handleGetChannels()
   server.send(200, "text/x-csv", Channel::ChannelsToString(channels, cntChannels));
 }
 
-const String TAGS_INI = "/dat/tags.csv";
+const String TAGS_CSV = "/dat/tags.csv";
 
 void handleGetTags()
 {
-  server.send(200, "text/x-csv", LittleFsUtils::ReadFile(TAGS_INI));
+  server.send(200, "text/x-csv", LittleFsUtils::ReadFile(TAGS_CSV));
 }
 
 void handleSetTags()
 {
-  LittleFsUtils::WriteFile(TAGS_INI, server.arg("plain"));
+  LittleFsUtils::WriteFile(TAGS_CSV, server.arg("plain"));
   SendEmptyText(server);
 }
 
@@ -317,7 +317,7 @@ void setup()
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, false);
 
-  EasyFS::setFileName("/dat/msgs.log"); // http://192.168.0.20/loadTextFile?name=dat/msgs.log
+  // EasyFS::setFileName("/dat/msgs.log"); // http://192.168.0.20/loadTextFile?name=dat/msgs.log
 
   WiFi.mode(WIFI_STA);
   if (!ConnectToWiFi())
@@ -355,8 +355,11 @@ void setup()
             { HandleDataFile(server, "/inc/style.css", "text/css"); });
   server.on("/inc/script.js", []()
             { HandleDataFile(server, "/inc/script.js", "text/javascript"); });
+  // verzija 512x512 vredi zbog ikonice na Androidu; ikonica u browseru moze biti manja
   server.on("/inc/blue_remote_512.png", []()
             { HandleDataFile(server, "/inc/blue_remote_512.png", "image/png"); });
+  server.on("/inc/blue_remote_48.png", []()
+            { HandleDataFile(server, "/inc/blue_remote_48.png", "image/png"); });
   server.begin();
   Serial.println("HTTP server started");
   initChannels();
