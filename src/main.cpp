@@ -39,7 +39,7 @@ Channel *channels;
 
 void initChannels()
 {
-  //TODO zapamtiti koji su kanali bili selektovani (idxSelected>0) i kasnije ih ponovo postaviti u nizu
+  // TODO zapamtiti koji su kanali bili selektovani (idxSelected>0) i kasnije ih ponovo postaviti u nizu
   if (cntChannels > 0) // ako se ova funkcija zove drugi, treci put... i kanali su vec popunjeni
     free(channels);
 
@@ -136,7 +136,7 @@ void sendIRcodes(long *codes)
   {
     if (i != 0 && codes[i] == codes[i - 1])
       delay(itvLongDelay);
-    //T Serial.println(codes[i]);
+    // T Serial.println(codes[i]);
     irsend.sendNEC(codes[i]);
     delay(itvShortDelay);
   }
@@ -201,7 +201,7 @@ void turnTo(short chNum)
 void handleAction()
 {
   String cmd = server.arg("cmd");
-  //T EasyFS::addf(cmd);
+  // T EasyFS::addf(cmd);
 
   // sve komande osim ovde izuzetih znace otkazivanje Subtitles opcije
   if (cmd != "mute" && !cmd.startsWith("vol") && !cmd.startsWith("color") && !cmd.startsWith("back") && cmd.indexOf("light") == -1 && !cmd.endsWith(SEL_CH_SUFFIX))
@@ -268,7 +268,7 @@ void handleAction()
         delay(itvLongDelay);
       }
       int idx = ch.toInt();
-      //T Serial.println(channels[idx].ToString());
+      // T Serial.println(channels[idx].ToString());
       turnTo(channels[idx].number);
     }
   }
@@ -320,8 +320,14 @@ void setup()
   // EasyFS::setFileName("/dat/msgs.log"); // http://192.168.0.20/loadTextFile?name=dat/msgs.log
 
   WiFi.mode(WIFI_STA);
-  if (!ConnectToWiFi())
-    ESP.deepSleep(5 * 60 * 1000); // cekanje/spavanje 5min da ruter ozivi posle dolaska struje npr.
+  WiFi.persistent(false);
+  //* Cekanje na internet u spavanju - ovo ne radi na nekim ESP8266 modulima
+  // if (!ConnectToWiFi())
+  //   ESP.deepSleep(5 * 60 * 1000000); // cekanje/spavanje 5min da ruter ozivi posle dolaska struje npr.
+  //* Cekanje na internet bez spavanja - ovo radi na svim ESP8266 modulima
+  while (!ConnectToWiFi())
+    delay(1 * 60 * 1000); // cekanje 1min
+
   UpdateCSV::DownloadNewCsvIN();
   UpdateCSV::UploadNewCsvIN();
   loadConfigIni();
@@ -345,8 +351,7 @@ void setup()
             {
               server.send(200, "text/plain", "ESP is waiting for OTA updates...");
               isOtaOn = true;
-              ArduinoOTA.begin();
-            });
+              ArduinoOTA.begin(); });
   server.on("/chanSelMoveUp", handleChanSelMoveUp);
   server.on("/turnLater", handleTurnLater);
   server.on("/", []()
